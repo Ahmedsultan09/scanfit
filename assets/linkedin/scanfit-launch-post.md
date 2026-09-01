@@ -1,35 +1,37 @@
-I’ve just published ScanFit, a free and open-source scan-to-PDF library for the browser.
+I’ve published ScanFit, a free and open-source scan-to-PDF library for the browser.
 
-A document-upload field often assumes the PDF already exists.
+Picture a user halfway through an application form. The portal asks for one PDF under 2 MB, but the document is still on paper.
 
-But when the document is still on paper, the user has to leave the website, open a separate scanner app, capture each page, export a PDF, return to the form and upload it.
+They leave the website, open CamScanner or another scanning app, capture the pages, export a PDF, return and upload it. Switching away may cost them unsaved answers or an expired session. If the PDF exceeds the limit, they leave again to find a compression tool.
 
-If the portal rejects that PDF for exceeding its upload limit, the user has to leave the flow again and find another way to compress it.
+ScanFit is designed to keep that entire journey inside the website:
 
-That interrupted journey is the problem ScanFit is designed to remove.
+Capture or import → detect and correct pages → reorder → fit the byte limit → inspect the exported result → receive a PDF `File`.
 
-ScanFit lets developers put the complete workflow inside their website:
+The host application controls submission. ScanFit handles the document workflow without uploading or storing the user’s pages.
 
-Capture or import → correct pages → reorder → fit the byte limit → inspect the exported result → receive a PDF `File`.
+What happens before ScanFit returns a file:
 
-The user stays in the form, while the host application receives the finished file and controls its submission.
+- The developer provides an exact integer `maxBytes` limit.
+- ScanFit measures the completed PDF, including structural overhead.
+- A `ready` result never exceeds that limit.
+- The report shows total bytes plus each page’s size, dimensions, encoding settings and warnings.
+- The review screen displays the actual compressed pixels embedded in the PDF, so users can zoom in and check text, signatures and stamps.
+- If the document cannot fit within the configured quality and resolution floors, ScanFit returns `cannot-fit` with page diagnostics. It does not silently remove pages, change the color mode or cross those floors.
 
-What makes it useful:
+The workflow also includes camera capture; JPEG, PNG and WebP import; automatic corner detection and manual cropping; rotation, retaking, removal and drag-free reordering; color, grayscale and contrast filters; blur and darkness warnings; and A4, Letter or image-proportional pages.
 
-- The host sets an exact `maxBytes` value.
-- A successful export never exceeds that limit, including PDF overhead.
-- If the document cannot fit without crossing the configured quality floors, ScanFit returns `cannot-fit` with page-level diagnostics.
-- The final preview shows the compressed pixels embedded in the PDF, not a higher-quality substitute.
-- Processing stays on the device. ScanFit does not upload or store the document.
-- The full distributed runtime is about 43 kB gzip and uses browser-native processing.
+Where this can help:
 
-It is intended for frontend developers and product teams building application forms, education platforms and document-upload portals—especially when documents begin as phone photos and the portal enforces a file-size limit.
+- Government portals collecting IDs, applications and supporting documents.
+- Schools and universities handling enrollment forms, assignments and consent papers.
+- HR and recruitment systems collecting certificates and onboarding paperwork.
+- Insurance and claims portals receiving forms, receipts and photo evidence.
+- Any product that accepts paper documents through a size-limited upload field.
 
 Install the public alpha:
 
 `npm install @scanfit/browser@next`
-
-Then use the React scanner:
 
 ```tsx
 import { DocumentScanner } from "@scanfit/browser/react";
@@ -41,14 +43,14 @@ import "@scanfit/browser/styles.css";
 />
 ```
 
-There is also a framework-independent TypeScript core, plus examples for Next.js, Vue, Svelte and vanilla TypeScript.
+It includes React components, a framework-independent TypeScript core and examples for Next.js, Vue, Svelte and vanilla TypeScript.
 
-ScanFit is still an alpha. Physical-device testing, a broader real-document corpus and early integration feedback are the next priorities.
+ScanFit is an alpha. Physical-device testing and broader real-document trials are next.
 
 Live demo: https://scanfit-two.vercel.app
 GitHub: https://github.com/Ahmedsultan09/scanfit
 npm: https://www.npmjs.com/package/@scanfit/browser
 
-If you build document-upload flows, try it and share the cases that usually break your users’ uploads.
+If you build document-upload flows, I’d value the edge cases that currently send your users out of the form.
 
 #OpenSource #TypeScript #React #Frontend #WebDevelopment
