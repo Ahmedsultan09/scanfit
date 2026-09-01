@@ -6,3 +6,5 @@ playwright-report/
 work/
 *.tgz
 .vercel/
+.vercel
+.env*
