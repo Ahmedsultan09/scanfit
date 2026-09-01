@@ -1,8 +1,11 @@
 {
   "name": "scanfit-workspace",
-  "private": true,
+  "private": false,
   "type": "module",
-  "workspaces": ["packages/*", "examples/*"],
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json && node scripts/notices.mjs && vite build",
