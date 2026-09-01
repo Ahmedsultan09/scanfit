@@ -11,7 +11,7 @@ The code implements the planned beta workflow. Do not interpret local automated 
 - [x] Cancellation, stale-job rejection, worker/canvas fallback, source/URL/bitmap cleanup and camera track shutdown.
 - [x] ESM/types, SSR-safe import checks, production Vite/Webpack consumer checks, synthetic fixtures and local documentation.
 - [x] Runtime-size budget check and desktop performance smoke measurements.
-- [x] CI workflow passed remotely for Chromium, Firefox, WebKit and qpdf on commit `9afcbbe`.
+- [x] CI workflow passed remotely for Chromium, Firefox, WebKit and qpdf on independent-detector commit `c6fb3ef`.
 - [x] Runnable Vite React, Next.js App Router, vanilla TypeScript, Vue and Svelte examples with automated production builds.
 
 ## Before calling this a public beta
