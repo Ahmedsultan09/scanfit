@@ -14,6 +14,7 @@ Notable changes to ScanFit will be recorded here. The project follows [Semantic 
 - Hosted interactive demo and initial project documentation.
 - Runnable Vite React, Next.js, vanilla TypeScript, Vue and Svelte consumers.
 - Contribution, conduct, support, security and dependency-maintenance policies.
+- Independent typed-array document detector with region and Hough-line candidates, evidence diagnostics, configurable confidence gates and manual fallback; Scanic is no longer a dependency.
 
 ### Security
 

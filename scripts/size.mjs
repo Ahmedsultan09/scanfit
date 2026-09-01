@@ -25,8 +25,6 @@ const files = await Promise.all(
     };
   }),
 );
-if (files.some((f) => /mlDetector|scanic-ort/.test(f.path)))
-  throw new Error("An optional ML runtime leaked into the distribution.");
 const sum = (list) =>
   Object.fromEntries(
     ["bytes", "gzip", "brotli"].map((k) => [
@@ -51,7 +49,7 @@ const workflow = sum(
 const all = sum(files);
 const report = {
   method:
-    "Sum of separately compressed distributed assets. Includes all JS, worker code, embedded WASM, CSS and optional public entry points. Excludes host React and declaration files. No concatenated-size discount. Trigger budget includes eagerly imported CSS.",
+    "Sum of separately compressed distributed assets. Includes all JS, worker code, any emitted WASM, CSS and optional public entry points. Excludes host React and declaration files. No concatenated-size discount. Trigger budget includes eagerly imported CSS.",
   triggerJs,
   trigger,
   workflow,

@@ -6,7 +6,10 @@ export type WorkerTask =
       kind: "analyze";
       blob: Blob;
       header: ImageHeader;
-      options: Pick<SessionOptions, "detector" | "detectorModule">;
+      options: Pick<
+        SessionOptions,
+        "detector" | "detectorModule" | "detectorOptions"
+      >;
     }
   | { kind: "render"; page: StoredPage }
   | {

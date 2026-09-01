@@ -24,6 +24,17 @@ describe("SSR-safe session lifecycle", () => {
   });
   it("rejects invalid limits", () =>
     expect(() => createScanSession({ limits: { maxPixels: 0 } })).toThrow());
+  it("rejects invalid detector tuning instead of silently changing behavior", () => {
+    for (const detectorOptions of [
+      { minConfidence: Number.NaN },
+      { minConfidence: 0.1 },
+      { maxComponents: 0 },
+      { maxCandidates: 65 },
+    ])
+      expect(() => createScanSession({ detectorOptions })).toThrow(
+        "Detector options",
+      );
+  });
   it("disposes idempotently and rejects future operations", async () => {
     const s = createScanSession();
     s.dispose();

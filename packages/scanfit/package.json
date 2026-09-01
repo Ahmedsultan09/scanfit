@@ -37,5 +37,5 @@
   },
   "peerDependencies": {"react": "^18.2.0 || ^19.0.0"},
   "peerDependenciesMeta": {"react": {"optional": true}},
-  "dependencies": {"scanic": "1.6.0", "tinypdf": "0.4.1"}
+  "dependencies": {"tinypdf": "0.4.1"}
 }

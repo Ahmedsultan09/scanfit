@@ -4,6 +4,7 @@ import { fitDimensions, warpPixels } from "./geometry";
 import {
   FULL_QUAD,
   copyQuad,
+  type DetectionResult,
   type DocumentDetector,
   type StoredPage,
   type Warning,
@@ -177,24 +178,21 @@ async function processTask(task: WorkerTask, id: number): Promise<unknown> {
   if (task.kind === "analyze") {
     const pixels = await decode(task.blob, task.header, 1200),
       analysis = await decode(task.blob, task.header, 800);
-    let corners = copyQuad(FULL_QUAD);
+    let corners = copyQuad(FULL_QUAD),
+      detection: DetectionResult["diagnostics"];
     const flags = warnings(analysis);
     if (task.options.detector !== "none") {
       try {
-        if (
-          !task.options.detectorModule &&
-          typeof OffscreenCanvas === "undefined"
-        )
-          throw new Error("Worker canvas unavailable.");
         if (!detector || detectorKey !== task.options.detectorModule) {
           detector = task.options.detectorModule
             ? await (
                 await import(/* @vite-ignore */ task.options.detectorModule)
-              ).createDetector()
-            : createDetector();
+              ).createDetector(task.options.detectorOptions)
+            : createDetector(task.options.detectorOptions);
           detectorKey = task.options.detectorModule;
         }
         const result = await detector!.detect(analysis);
+        detection = result.diagnostics;
         if (result.corners) corners = result.corners;
         else flags.push("manual-crop");
       } catch {
@@ -214,6 +212,7 @@ async function processTask(task: WorkerTask, id: number): Promise<unknown> {
       height,
       corners,
       warnings: flags,
+      detection,
     };
   }
   if (task.kind === "render")

@@ -25,16 +25,53 @@ export interface ScanPage {
   thumbnail: Blob;
   edits: PageEdits;
   warnings: Warning[];
+  /** Detector evidence for observability and honest automatic-crop fallbacks. */
+  detection?: DetectionDiagnostics;
 }
 export interface StoredPage extends ScanPage {
   source: Blob;
 }
+export type DetectionFallbackReason =
+  | "invalid-image"
+  | "uniform-image"
+  | "no-candidate"
+  | "low-confidence";
+export interface DetectionDiagnostics {
+  engine: string;
+  confidence: number;
+  candidateCount: number;
+  edgeThreshold: number;
+  edgeDensity: number;
+  durationMs: number;
+  coverage: number;
+  edgeSupport: number;
+  contrast: number;
+  rectangularity: number;
+  source?:
+    | "edges"
+    | "hough-lines"
+    | "bright-region"
+    | "dark-region"
+    | "border-contrast"
+    | string;
+  fallbackReason?: DetectionFallbackReason;
+}
 export interface DetectionResult {
   corners: Quad | null;
   confidence?: number;
+  /** Optional evidence for debugging, benchmarks, and honest fallbacks. */
+  diagnostics?: DetectionDiagnostics;
 }
 export interface DocumentDetector {
   detect(image: ImageData): Promise<DetectionResult>;
+}
+export interface DetectorOptions {
+  /** Minimum heuristic evidence confidence required to accept automatic corners. */
+  minConfidence?: number;
+  /** Maximum connected regions evaluated per evidence map. */
+  maxComponents?: number;
+  /** Maximum unique quadrilateral candidates scored. */
+  maxCandidates?: number;
 }
 export interface SafetyLimits {
   maxPages: number;
@@ -45,6 +82,7 @@ export interface SafetyLimits {
 export interface SessionOptions {
   limits?: Partial<SafetyLimits>;
   detector?: "auto" | "none";
+  detectorOptions?: DetectorOptions;
   /** Optional same-origin ES module exporting createDetector(): DocumentDetector. */
   detectorModule?: string;
   /** For hosts with a custom worker asset pipeline. Must be same-origin. */

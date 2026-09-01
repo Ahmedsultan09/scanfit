@@ -1,8 +1,8 @@
 import { readFile, writeFile, copyFile } from "node:fs/promises";
 const parts = [
-  "# Third-party notices\n\nThe runtime bundles the following MIT-licensed dependencies. Scanic is pinned to its classical detector; its optional ML loader is disabled at build time. No upstream package files are modified.\n",
+  "# Third-party notices\n\nThe runtime bundles the following MIT-licensed dependency. No upstream package files are modified.\n",
 ];
-for (const name of ["scanic", "tinypdf"]) {
+for (const name of ["tinypdf"]) {
   const pkg = JSON.parse(
     await readFile(`node_modules/${name}/package.json`, "utf8"),
   );

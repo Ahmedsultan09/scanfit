@@ -1,6 +1,52 @@
 export { createScanSession, FULL_QUAD } from "../../packages/scanfit/src/core";
 export { createSample } from "../../playground/samples";
 
+export async function detectorSample() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 640;
+  canvas.height = 480;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#303943";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Distractors stay separate from the page and exercise candidate ranking.
+  ctx.fillStyle = "#66717c";
+  ctx.fillRect(18, 25, 34, 170);
+  ctx.fillRect(535, 420, 90, 14);
+  const expected = [
+    { x: 0.16, y: 0.12 },
+    { x: 0.86, y: 0.2 },
+    { x: 0.78, y: 0.9 },
+    { x: 0.1, y: 0.8 },
+  ];
+  const path = (offsetX: number, offsetY: number) => {
+    ctx.beginPath();
+    expected.forEach((point, index) => {
+      const x = point.x * (canvas.width - 1) + offsetX,
+        y = point.y * (canvas.height - 1) + offsetY;
+      if (index) ctx.lineTo(x, y);
+      else ctx.moveTo(x, y);
+    });
+    ctx.closePath();
+  };
+  path(12, 15);
+  ctx.fillStyle = "rgba(0,0,0,.32)";
+  ctx.fill();
+  path(0, 0);
+  ctx.fillStyle = "#f5f2e9";
+  ctx.fill();
+  ctx.save();
+  path(0, 0);
+  ctx.clip();
+  ctx.fillStyle = "#44505b";
+  for (let y = 150; y <= 360; y += 34) ctx.fillRect(190, y, 260, 7);
+  ctx.restore();
+  const blob = await new Promise<Blob>((resolve) =>
+    canvas.toBlob((value) => resolve(value!), "image/png"),
+  );
+  canvas.width = canvas.height = 0;
+  return { blob, expected };
+}
+
 export async function coloredImage(
   orientation = 1,
   transparent = false,

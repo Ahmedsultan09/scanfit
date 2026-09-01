@@ -124,6 +124,52 @@ test("real worker export, exact-byte boundary, PDF.js rendering, metadata and no
   ).toBe(true);
 });
 
+test("independent detector finds a perspective page in the real worker and exposes evidence", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const result = await page.evaluate(async () => {
+    const path = "/tests/browser/harness.ts";
+    const { createScanSession, detectorSample } = await import(
+      /* @vite-ignore */ path
+    );
+    const { blob, expected } = await detectorSample();
+    const session = createScanSession();
+    try {
+      const [added] = await session.addFiles([blob]);
+      return {
+        expected,
+        corners: added.edits.corners,
+        detection: added.detection,
+        warnings: added.warnings,
+      };
+    } finally {
+      session.dispose();
+    }
+  });
+  const error = result.corners.reduce(
+    (sum: number, point: { x: number; y: number }, index: number) =>
+      sum +
+      Math.hypot(
+        point.x - result.expected[index].x,
+        point.y - result.expected[index].y,
+      ),
+    0,
+  ) / 4;
+  expect(error).toBeLessThan(0.055);
+  expect(result.warnings).not.toContain("manual-crop");
+  expect(result.warnings).not.toContain("detection-unavailable");
+  expect(result.detection).toMatchObject({
+    engine: "scanfit-classical",
+    fallbackReason: undefined,
+  });
+  expect(result.detection.confidence).toBeGreaterThanOrEqual(0.5);
+  expect(result.detection.candidateCount).toBeGreaterThan(0);
+  expect(result.detection.edgeSupport).toBeGreaterThan(0.28);
+  expect(result.detection.durationMs).toBeGreaterThan(0);
+  expect(result.detection.durationMs).toBeLessThan(1_000);
+});
+
 test("impossible limit preserves pages; editing invalidates output; cancellation and replacement are safe", async ({
   page,
 }) => {
@@ -298,10 +344,11 @@ test("canvas bridge fallback and a high-resolution source crop retain native det
     const fallback = createScanSession({
       workerUrl: "/tests/browser/fallback.worker.ts",
     });
-    let fallbackPixel, warnings;
+    let fallbackPixel, warnings, detection;
     try {
       const [p] = await fallback.addFiles([await coloredImage(6)]);
       warnings = p.warnings;
+      detection = p.detection;
       const r = await fallback.exportPdf({ maxBytes: 100_000 });
       fallbackPixel = await pixel(r.report.pages[0].preview);
     } finally {
@@ -333,6 +380,7 @@ test("canvas bridge fallback and a high-resolution source crop retain native det
       return {
         fallbackPixel,
         warnings,
+        detection,
         width: result.report.pages[0].width,
         height: result.report.pages[0].height,
       };
@@ -340,7 +388,12 @@ test("canvas bridge fallback and a high-resolution source crop retain native det
       s.dispose();
     }
   });
-  expect(r.warnings).toContain("detection-unavailable");
+  expect(r.warnings).not.toContain("detection-unavailable");
+  expect(r.warnings).toContain("manual-crop");
+  expect(r.detection).toMatchObject({
+    engine: "scanfit-classical",
+    fallbackReason: "low-confidence",
+  });
   expect(r.fallbackPixel[2]).toBeGreaterThan(240);
   expect(r.width).toBeGreaterThanOrEqual(1998);
   expect(r.height).toBeGreaterThanOrEqual(1998);

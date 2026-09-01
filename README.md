@@ -153,7 +153,7 @@ A4 and Letter use aspect-preserving containment with white margins. Image-propor
 @scanfit/browser/trigger    small React dialog launcher
 @scanfit/browser/react      ready-made UI, useScanSession, message dictionary
 @scanfit/browser/core       sessions, validation, worker coordination, types
-@scanfit/browser/detector   replaceable Scanic classical detector adapter
+@scanfit/browser/detector   independent, replaceable classical detector
 @scanfit/browser/pdf        bounded planner and tinypdf JPEG writer
 @scanfit/browser/styles.css optional UI stylesheet (required for the ready-made design)
 ```
@@ -162,15 +162,17 @@ These are independent ESM entry points in one package, not four independently pu
 
 One worker handles a serial queue per active session. Detection runs at an 800-pixel long edge. Perspective correction and filters are worker pixel code. Export first decodes the source crop’s bounding region, then applies perspective correction, so a small crop inside a large photo is not prematurely downsampled. Only the active page’s decoded working set is retained; compressed sources, thumbnails and export candidate JPEGs remain until no longer needed.
 
-Worker-native decoding/encoding uses `createImageBitmap` and `OffscreenCanvas`. Feature failures fall back to a main-thread native canvas codec bridge with transferred pixel buffers. Pixel transformations remain in the worker. Classical detection currently requires worker canvas support; without it, the UI explains that corners need manual adjustment. A JavaScript detection fallback can be used when Scanic’s WASM is unavailable. All fallback paths still need real Safari/device validation.
+Worker-native decoding/encoding uses `createImageBitmap` and `OffscreenCanvas`. Feature failures fall back to a main-thread native canvas codec bridge with transferred pixel buffers. Pixel transformations and the independent typed-array detector remain in the worker. All fallback paths still need real Safari/device validation.
 
-The Scanic `1.6.0` build-time adapter disables its optional ML loader. The transform fails if the pinned loader shape changes. `tinypdf` is pinned to `0.4.1`. Both MIT notices are distributed with the package.
+The default detector is implemented in this repository without copied Scanic source. It combines luminance preprocessing, dual-threshold connected edges, region segmentation, connected components, convex-hull candidates, polar Hough line pairs, geometric validation, and measured evidence scoring. It performs no network requests and ships no ML model or WASM. `tinypdf` is pinned to `0.4.1`; its MIT notice is distributed with the package.
 
 ### Replace the detector
 
-Serve a same-origin ES module exporting `createDetector(): DocumentDetector`, then pass `detectorModule: '/assets/my-detector.js'` to `createScanSession`. Its `detect(ImageData)` method returns `{ corners: Quad | null, confidence?: number }`. The input is the oriented detection-size image; return normalized coordinates. Use `detector: 'none'` for manual cropping only. Custom modules own their own dependency sizes, privacy behavior, and licensing.
+Serve a same-origin ES module exporting `createDetector(): DocumentDetector`, then pass `detectorModule: '/assets/my-detector.js'` to `createScanSession`. Its `detect(ImageData)` method returns `{ corners: Quad | null, confidence?: number, diagnostics?: DetectionDiagnostics }`. The input is the oriented detection-size image; return normalized coordinates. Use `detector: 'none'` for manual cropping only. Custom modules own their own dependency sizes, privacy behavior, and licensing.
 
-The default Scanic adapter declines weak outlines below a `0.4` confidence heuristic. Detection can still be wrong: source corners and final pixels must remain inspectable.
+The default detector declines candidates below its heuristic confidence and edge-support gates. Each accepted page exposes detection duration, candidate count, confidence, edge density, edge support, contrast, coverage, rectangularity, and candidate source. A fallback includes an explicit reason. Detection can still be wrong: source corners and final pixels must remain inspectable.
+
+See [the independent detector design](docs/DETECTOR.md) for the algorithm boundary, tuning, evidence contract, test scope and current real-photo limitations.
 
 ## Privacy, safety and host responsibilities
 
@@ -181,7 +183,7 @@ The default Scanic adapter declines weak outlines below a `0.4` confidence heuri
 - Still JPEG, PNG and WebP only. Animated PNG/WebP are rejected. No HEIC, existing PDF import, OCR, searchable text, tagged/accessibility PDF, digital signature, or redaction feature.
 - Camera use requires HTTPS or localhost and permission. Embedded applications may need camera permission delegated by their host. Tracks stop on camera close, unmount, capture, or a hidden tab.
 - Serve JS, worker assets and CSS from your application. A custom `workerUrl` must be same-origin and implement the library worker protocol; it is an advanced integration, not an arbitrary Worker object.
-- Worker policy needs same-origin module workers (`worker-src 'self'`). Scanic’s embedded WASM can require `script-src 'wasm-unsafe-eval'`; restrictive policies may select its JavaScript fallback. Preview images need `img-src blob:`. UI geometry uses inline styles; account for that in `style-src-attr`. This is a requirements list, not a drop-in CSP for every host.
+- Worker policy needs same-origin module workers (`worker-src 'self'`). The default detector is JavaScript and does not require `wasm-unsafe-eval`. Preview images need `img-src blob:`. UI geometry uses inline styles; account for that in `style-src-attr`. This is a requirements list, not a drop-in CSP for every host.
 - Keep the host page and third-party scripts trustworthy: they share the page environment and may observe files the user selects. The library cannot enforce a privacy promise on behalf of the host.
 
 ## Accessibility and customization

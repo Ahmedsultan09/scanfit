@@ -21,6 +21,7 @@ try {
       [0, 1, 2, 3, 4].map((i) => createSample(i)),
     );
     const captures = [],
+      detectorDurations = [],
       exports = [],
       sessions = [],
       longTasks = [];
@@ -36,7 +37,10 @@ try {
         const [p] = await warm.addFiles([sources[i % 5]]);
         const ms = performance.now() - start;
         if (i === 0) coldCaptureMs = ms;
-        else captures.push(ms);
+        else {
+          captures.push(ms);
+          if (p.detection) detectorDurations.push(p.detection.durationMs);
+        }
         warm.removePage(p.id);
       }
       await warm.addFiles(sources);
@@ -89,6 +93,7 @@ try {
       coldModuleLoadMs,
       coldCaptureMs,
       warmCapture: stats(captures),
+      warmDetector: stats(detectorDurations),
       warmFivePageExport: stats(exports),
       sessions,
       mainThreadLongTasksMs: longTasks,

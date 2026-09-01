@@ -1,9 +1,7 @@
 import { defineConfig } from "vite";
 import { resolve } from "node:path";
-import { classicalOnly } from "./build/classical-only";
 
 export default defineConfig({
-  plugins: [classicalOnly()],
   base: "./",
   publicDir: false,
   build: {
@@ -25,5 +23,5 @@ export default defineConfig({
     },
     minify: true,
   },
-  worker: { format: "es", plugins: () => [classicalOnly()] },
+  worker: { format: "es" },
 });

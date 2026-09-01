@@ -39,11 +39,30 @@ export interface ScanSession {
 }
 
 export function createScanSession(options: SessionOptions = {}): ScanSession {
-  const limits = { ...DEFAULT_LIMITS, ...options.limits };
+  const limits = { ...DEFAULT_LIMITS, ...options.limits },
+    detectorOptions = { ...options.detectorOptions };
   if (Object.values(limits).some((n) => !Number.isSafeInteger(n) || n < 1))
     throw new ScanError(
       "INVALID_INPUT",
       "Safety limits must be positive integers.",
+    );
+  if (
+    (detectorOptions.minConfidence !== undefined &&
+      (!Number.isFinite(detectorOptions.minConfidence) ||
+        detectorOptions.minConfidence < 0.15 ||
+        detectorOptions.minConfidence > 0.95)) ||
+    (detectorOptions.maxComponents !== undefined &&
+      (!Number.isSafeInteger(detectorOptions.maxComponents) ||
+        detectorOptions.maxComponents < 1 ||
+        detectorOptions.maxComponents > 16)) ||
+    (detectorOptions.maxCandidates !== undefined &&
+      (!Number.isSafeInteger(detectorOptions.maxCandidates) ||
+        detectorOptions.maxCandidates < 1 ||
+        detectorOptions.maxCandidates > 64))
+  )
+    throw new ScanError(
+      "INVALID_INPUT",
+      "Detector options are outside their supported ranges.",
     );
   if (
     options.detectorModule &&
@@ -83,6 +102,9 @@ export function createScanSession(options: SessionOptions = {}): ScanSession {
       preview: p.preview,
       thumbnail: p.thumbnail,
       warnings: Object.freeze([...p.warnings]) as unknown as Warning[],
+      detection: p.detection
+        ? Object.freeze({ ...p.detection })
+        : undefined,
       edits: Object.freeze({
         ...p.edits,
         corners: Object.freeze(
@@ -182,12 +204,17 @@ export function createScanSession(options: SessionOptions = {}): ScanSession {
             height: number;
             corners: Quad;
             warnings: Warning[];
+            detection?: StoredPage["detection"];
           }>(
             {
               kind: "analyze",
               blob: file,
               header,
-              options: { detector: options.detector, detectorModule },
+              options: {
+                detector: options.detector,
+                detectorModule,
+                detectorOptions,
+              },
             },
             op.signal,
           );
@@ -202,6 +229,7 @@ export function createScanSession(options: SessionOptions = {}): ScanSession {
             preview: data.preview,
             thumbnail: data.thumbnail,
             warnings: data.warnings,
+            detection: data.detection,
             edits: {
               corners: copyQuad(data.corners),
               rotation: 0,

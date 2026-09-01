@@ -10,10 +10,11 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "size": "node scripts/size.mjs",
+    "test:independence": "node scripts/independence.mjs",
     "test:consumers": "node scripts/consumers.mjs",
     "test:examples": "node scripts/examples.mjs",
     "benchmark": "node scripts/benchmark.mjs",
-    "verify": "npm run typecheck && npm test && npm run build && npm run size && npm run test:consumers && npm run test:examples"
+    "verify": "npm run typecheck && npm test && npm run build && npm run test:independence && npm run size && npm run test:consumers && npm run test:examples"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
