@@ -62,6 +62,27 @@ test("real worker export, exact-byte boundary, PDF.js rendering, metadata and no
       const text = await prepared.file.text();
       const finalPixelBytes =
         await prepared.report.pages[0].preview.arrayBuffer();
+      const hasExif = async (blob: Blob) => {
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        for (let i = 2; i + 9 < bytes.length && bytes[i] === 0xff; ) {
+          const marker = bytes[i + 1];
+          if (marker === 0xda || marker === 0xd9) break;
+          const length = (bytes[i + 2] << 8) | bytes[i + 3];
+          if (length < 2 || i + length + 2 > bytes.length) break;
+          if (
+            marker === 0xe1 &&
+            bytes[i + 4] === 0x45 &&
+            bytes[i + 5] === 0x78 &&
+            bytes[i + 6] === 0x69 &&
+            bytes[i + 7] === 0x66 &&
+            bytes[i + 8] === 0 &&
+            bytes[i + 9] === 0
+          )
+            return true;
+          i += length + 2;
+        }
+        return false;
+      };
       return {
         size,
         boundary: boundary.status,
@@ -70,7 +91,9 @@ test("real worker export, exact-byte boundary, PDF.js rendering, metadata and no
         warnings: added.map((p: any) => p.warnings),
         metadata: pdf.metadata,
         privateName: text.includes("sample-"),
-        hasExif: text.includes("Exif"),
+        hasExif: (
+          await Promise.all(prepared.report.pages.map((p: any) => hasExif(p.preview)))
+        ).some(Boolean),
         previewBytes: finalPixelBytes.byteLength,
         localStorage: localStorage.length,
         sessionStorage: sessionStorage.length,
@@ -90,7 +113,13 @@ test("real worker export, exact-byte boundary, PDF.js rendering, metadata and no
   expect(result.localStorage + result.sessionStorage).toBe(0);
   expect(
     requests.every(
-      (r) => r.method === "GET" && new URL(r.url).hostname === "127.0.0.1",
+      (r) => {
+        const url = new URL(r.url);
+        return (
+          (url.protocol === "blob:" || url.origin === "http://127.0.0.1:5173") &&
+          r.method === "GET"
+        );
+      },
     ),
   ).toBe(true);
 });
@@ -181,9 +210,8 @@ test("EXIF orientations 1–8 are applied once; transparent pixels export white"
     for (let orientation = 1; orientation <= 9; orientation++) {
       const session = createScanSession({ detector: "none" });
       try {
-        const [p] = await session.addFiles([
-          await coloredImage(orientation, orientation === 9),
-        ]);
+        const source = await coloredImage(orientation, orientation === 9);
+        const [p] = await session.addFiles([source]);
         const r = await session.exportPdf({ maxBytes: 100_000 });
         if (r.status !== "ready") throw new Error("No JPEG");
         results.push({
@@ -366,28 +394,48 @@ test("manual camera shutter, hidden tabs and closing stop all tracks", async ({
   await page.addInitScript(() => {
     const counts = { started: 0, stopped: 0 };
     (window as any).cameraCounts = counts;
-    Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
-      value: async () => {
-        const c = document.createElement("canvas");
-        c.width = 320;
-        c.height = 480;
-        const ctx = c.getContext("2d")!;
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, 320, 480);
-        const stream = c.captureStream(5);
+    const sources = new WeakMap<HTMLMediaElement, unknown>();
+    Object.defineProperty(HTMLMediaElement.prototype, "srcObject", {
+      configurable: true,
+      get() {
+        return sources.get(this) ?? null;
+      },
+      set(value) {
+        sources.set(this, value);
+      },
+    });
+    Object.defineProperties(HTMLVideoElement.prototype, {
+      videoWidth: { configurable: true, get: () => 320 },
+      videoHeight: { configurable: true, get: () => 480 },
+    });
+    HTMLMediaElement.prototype.play = async () => {};
+    const drawImage = CanvasRenderingContext2D.prototype.drawImage;
+    CanvasRenderingContext2D.prototype.drawImage = function (...args: any[]) {
+      if (args[0] instanceof HTMLVideoElement) {
+        this.fillStyle = "white";
+        this.fillRect(0, 0, 320, 480);
+        return;
+      }
+      return drawImage.apply(this, args as any);
+    };
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getUserMedia: async () => {
         counts.started++;
-        stream.getTracks().forEach((track) => {
-          const stop = track.stop.bind(track);
-          let stopped = false;
-          track.stop = () => {
-            if (!stopped) {
-              stopped = true;
-              counts.stopped++;
-            }
-            stop();
-          };
-        });
-        return stream;
+        let stopped = false;
+        return {
+          getTracks: () => [
+            {
+              stop: () => {
+                if (stopped) return;
+                stopped = true;
+                counts.stopped++;
+              },
+            },
+          ],
+        } as unknown as MediaStream;
+        },
       },
     });
   });

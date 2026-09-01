@@ -4,6 +4,7 @@ import {
   inspectImage,
 } from "../../packages/scanfit/src/core/headers";
 import { DEFAULT_LIMITS } from "../../packages/scanfit/src/core/types";
+import { stripJpegApp1 } from "../../packages/scanfit/src/core/jpeg";
 function png(w: number, h: number) {
   const b = new Uint8Array(33),
     v = new DataView(b.buffer);
@@ -98,6 +99,27 @@ describe("safe header inspection", () => {
     b.set([255, 225, 0, 6, 88, 77, 80, 0], 38);
     b.set(source.subarray(38), 46);
     expect(inspectImageBytes(b).orientation).toBe(6);
+  });
+  it("uses the first valid EXIF orientation when JPEG metadata is duplicated", () => {
+    const source = jpeg(6),
+      second = jpeg(1),
+      b = new Uint8Array(source.length + 36);
+    b.set(source.subarray(0, 38));
+    b.set(second.subarray(2, 38), 38);
+    b.set(source.subarray(38), 74);
+    expect(inspectImageBytes(b).orientation).toBe(6);
+  });
+  it("strips EXIF/XMP APP1 segments from encoded JPEGs", async () => {
+    const source = jpeg(6),
+      clean = new Uint8Array(
+        await (await stripJpegApp1(new Blob([source]))).arrayBuffer(),
+      );
+    expect(clean.length).toBe(source.length - 36);
+    expect(inspectImageBytes(clean)).toMatchObject({
+      width: 30,
+      height: 20,
+      orientation: 1,
+    });
   });
   it("reads PNG EXIF and rejects animated PNG", () => {
     const tiff = jpeg(8).slice(12, 38),

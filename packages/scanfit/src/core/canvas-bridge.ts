@@ -1,6 +1,7 @@
 import { ScanError } from "./types";
 import { fitDimensions } from "./geometry";
 import type { BridgeAction } from "./protocol";
+import { stripJpegApp1 } from "./jpeg";
 
 /** Native canvas decode/encode only. Pixel transforms never run in this bridge. */
 export async function canvasBridge(action: BridgeAction) {
@@ -100,7 +101,7 @@ export async function canvasBridge(action: BridgeAction) {
           "UNSUPPORTED_BROWSER",
           "This browser cannot encode JPEG images.",
         );
-      return { blob, ...dims };
+      return { blob: await stripJpegApp1(blob), ...dims };
     } finally {
       target.width = target.height = 0;
     }

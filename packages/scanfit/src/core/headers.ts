@@ -12,38 +12,42 @@ const bad = () =>
     "The image header is incomplete or invalid. Choose another photo.",
   );
 
-function exifOrientation(v: DataView, start: number, end: number): number {
+function exifOrientation(
+  v: DataView,
+  start: number,
+  end: number,
+): number | undefined {
   try {
-    if (start + 8 > end) return 1;
+    if (start + 8 > end) return undefined;
     const prefixed =
       v.getUint32(start) === 0x45786966 && v.getUint16(start + 4) === 0;
     const t = start + (prefixed ? 6 : 0);
-    if (t + 8 > end) return 1;
+    if (t + 8 > end) return undefined;
     const little = v.getUint16(t) === 0x4949;
     if (
       (!little && v.getUint16(t) !== 0x4d4d) ||
       v.getUint16(t + 2, little) !== 42
     )
-      return 1;
+      return undefined;
     const dir = t + v.getUint32(t + 4, little);
-    if (dir < t || dir + 2 > end) return 1;
+    if (dir < t || dir + 2 > end) return undefined;
     const count = Math.min(v.getUint16(dir, little), 256);
     for (let i = 0; i < count; i++) {
       const p = dir + 2 + i * 12;
-      if (p + 12 > end) return 1;
+      if (p + 12 > end) return undefined;
       if (
         v.getUint16(p, little) === 0x112 &&
         v.getUint16(p + 2, little) === 3 &&
         v.getUint32(p + 4, little) === 1
       ) {
         const value = v.getUint16(p + 8, little);
-        return value >= 1 && value <= 8 ? value : 1;
+        return value >= 1 && value <= 8 ? value : undefined;
       }
     }
   } catch {
     /* Malformed metadata is not used for allocations. */
   }
-  return 1;
+  return undefined;
 }
 
 /** Bounded header inspection before any image decoder is called. */
@@ -52,7 +56,14 @@ export function inspectImageBytes(bytes: Uint8Array): ImageHeader {
   let width = 0,
     height = 0,
     orientation = 1,
+    orientationFound = false,
     mime = "";
+  const useOrientation = (candidate: number | undefined) => {
+    if (!orientationFound && candidate !== undefined) {
+      orientation = candidate;
+      orientationFound = true;
+    }
+  };
   if (
     bytes.length >= 24 &&
     v.getUint32(0) === 0x89504e47 &&
@@ -72,7 +83,8 @@ export function inspectImageBytes(bytes: Uint8Array): ImageHeader {
           "UNSUPPORTED_FORMAT",
           "Animated PNG is not supported. Choose a still photo.",
         );
-      if (kind === 0x65584966) orientation = exifOrientation(v, p, p + len);
+      if (kind === 0x65584966)
+        useOrientation(exifOrientation(v, p, p + len));
       i = p + len + 4;
     }
   } else if (bytes.length >= 4 && v.getUint16(0) === 0xffd8) {
@@ -93,7 +105,7 @@ export function inspectImageBytes(bytes: Uint8Array): ImageHeader {
         v.getUint32(i + 2) === 0x45786966 &&
         v.getUint16(i + 6) === 0
       )
-        orientation = exifOrientation(v, i + 2, i + len);
+        useOrientation(exifOrientation(v, i + 2, i + len));
       if (
         marker >= 0xc0 &&
         marker <= 0xcf &&
@@ -149,7 +161,8 @@ export function inspectImageBytes(bytes: Uint8Array): ImageHeader {
         width = Math.max(width, (bits & 0x3fff) + 1);
         height = Math.max(height, ((bits >>> 14) & 0x3fff) + 1);
       }
-      if (kind === 0x45584946) orientation = exifOrientation(v, p, p + len);
+      if (kind === 0x45584946)
+        useOrientation(exifOrientation(v, p, p + len));
       i = p + len + (len & 1);
     }
   } else

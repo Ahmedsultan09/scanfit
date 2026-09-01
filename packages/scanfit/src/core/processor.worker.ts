@@ -11,6 +11,7 @@ import {
 } from "./types";
 import type { BridgeAction, WorkerTask } from "./protocol";
 import { inspectImageBytes, type ImageHeader } from "./headers";
+import { stripJpegApp1 } from "./jpeg";
 
 const scope = self as unknown as {
   postMessage: (message: unknown, transfer?: Transferable[]) => void;
@@ -102,7 +103,8 @@ async function encode(
       ctx.fillRect(0, 0, target.width, target.height);
       ctx.drawImage(canvas, 0, 0, target.width, target.height);
       const blob = await target.convertToBlob({ type: "image/jpeg", quality });
-      if (blob.type === "image/jpeg") return { blob, ...dims };
+      if (blob.type === "image/jpeg")
+        return { blob: await stripJpegApp1(blob), ...dims };
     } catch {
       /* Native main-thread JPEG encoder is the fallback. */
     } finally {
