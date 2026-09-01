@@ -1,14 +1,18 @@
 I’ve just published ScanFit, a free and open-source scan-to-PDF library for the browser.
 
-The problem sounds simple:
+A document-upload field often assumes the PDF already exists.
 
-A user has several document photos. The form accepts one PDF, and it must stay under a strict upload limit.
+But when the document is still on paper, the user has to leave the website, open a separate scanner app, capture each page, export a PDF, return to the form and upload it.
 
-For frontend teams, that usually means connecting camera input, image correction, page controls, compression, PDF generation and final-size validation. A preview can still look fine while the file that gets submitted is too large—or too compressed to trust.
+If the portal rejects that PDF for exceeding its upload limit, the user has to leave the flow again and find another way to compress it.
 
-ScanFit handles that workflow in one browser library:
+That interrupted journey is the problem ScanFit is designed to remove.
 
-Photos → crop and correct → reorder → fit the byte limit → inspect the exported pixels → receive a PDF `File`.
+ScanFit lets developers put the complete workflow inside their website:
+
+Capture or import → correct pages → reorder → fit the byte limit → inspect the exported result → receive a PDF `File`.
+
+The user stays in the form, while the host application receives the finished file and controls its submission.
 
 What makes it useful:
 
@@ -17,7 +21,7 @@ What makes it useful:
 - If the document cannot fit without crossing the configured quality floors, ScanFit returns `cannot-fit` with page-level diagnostics.
 - The final preview shows the compressed pixels embedded in the PDF, not a higher-quality substitute.
 - Processing stays on the device. ScanFit does not upload or store the document.
-- The full distributed runtime is about 43 kB gzip, with no Scanic dependency, ML model or detector WASM.
+- The full distributed runtime is about 43 kB gzip and uses browser-native processing.
 
 It is intended for frontend developers and product teams building application forms, education platforms and document-upload portals—especially when documents begin as phone photos and the portal enforces a file-size limit.
 
