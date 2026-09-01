@@ -45,6 +45,6 @@ Live demo: https://scanfit-two.vercel.app
 GitHub: https://github.com/Ahmedsultan09/scanfit
 npm: https://www.npmjs.com/package/@scanfit/browser
 
-If you build document-upload flows, I’d value your feedback on the API and the cases that usually break your users’ uploads.
+If you build document-upload flows, try it and share the cases that usually break your users’ uploads.
 
 #OpenSource #TypeScript #React #Frontend #WebDevelopment
