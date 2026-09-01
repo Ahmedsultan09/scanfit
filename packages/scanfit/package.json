@@ -1,6 +1,6 @@
 {
   "name": "@scanfit/browser",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Local, size-constrained scan-to-PDF workflows for the browser",
   "keywords": [
     "document-scanner",

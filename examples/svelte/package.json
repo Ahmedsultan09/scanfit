@@ -8,7 +8,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@scanfit/browser": "0.1.0-alpha.0",
+    "@scanfit/browser": "0.1.0-alpha.1",
     "svelte": "5.57.0"
   },
   "devDependencies": {
