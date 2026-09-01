@@ -3,6 +3,12 @@ name: publish
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing GitHub release tag to retry
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -20,11 +26,12 @@ jobs:
           package-manager-cache: false
       - run: npm install --global npm@11.19.1
       - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - run: npm run verify
       - id: release
         name: Validate release metadata
         env:
-          SCANFIT_RELEASE_TAG: ${{ github.event.release.tag_name }}
+          SCANFIT_RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
         run: node scripts/release-metadata.mjs
       - name: Publish package
         run: npm publish --workspace @scanfit/browser --access public --tag "${{ steps.release.outputs.distribution_tag }}"

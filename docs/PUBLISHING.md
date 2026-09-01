@@ -24,6 +24,8 @@ The workflow uses GitHub-hosted runners, Node 24, a pinned npm version with OIDC
 
 Publishing starts only when the GitHub release is published. The workflow rejects a release tag that does not match the package version. A version containing a prerelease suffix is published to `next`; a stable version is published to `latest`.
 
+If a workflow prerequisite fails before npm accepts the version, fix the workflow and use its manual **Run workflow** action with the existing release tag. The same tag/version check runs before a retry can publish.
+
 npm versions are immutable. If a publish fails after npm accepts the version, increment the version before retrying.
 
 After npm accepts a release, verify both the package metadata and package-page documentation:
