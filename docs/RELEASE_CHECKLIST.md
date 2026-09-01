@@ -13,7 +13,7 @@ The code implements the planned beta workflow. Do not interpret local automated 
 - [x] Runtime-size budget check and desktop performance smoke measurements.
 - [x] CI workflow passed remotely for Chromium, Firefox, WebKit and qpdf on independent-detector commit `c6fb3ef`.
 - [x] Runnable Vite React, Next.js App Router, vanilla TypeScript, Vue and Svelte examples with automated production builds.
-- [x] Public `@scanfit/browser@0.1.0-alpha.1` npm release with package README, provenance attestation and clean registry-consumer import check.
+- [x] Public `@scanfit/browser@0.1.0-alpha.1` npm release with provenance attestation and clean registry-consumer import check. Its missing registry README is corrected by `0.1.0-alpha.2`.
 
 ## Before calling this a public beta
 

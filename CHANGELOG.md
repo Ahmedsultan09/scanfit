@@ -4,6 +4,12 @@ Notable changes to ScanFit will be recorded here. The project follows [Semantic 
 
 ## Unreleased
 
+## 0.1.0-alpha.2 - 2026-09-01
+
+### Fixed
+
+- Explicitly include the package README in the published npm tarball so npm can render installation, computer-vision, size-contract and alpha-testing documentation.
+
 ## 0.1.0-alpha.1 - 2026-09-01
 
 ### Added
