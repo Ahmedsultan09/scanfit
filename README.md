@@ -4,6 +4,8 @@ An MIT-licensed TypeScript library for **capture/import → correct pages → fi
 
 **Status: local alpha implementation, not a release-certified beta.** Nothing has been published. `@scanfit/browser` is a private working package name, pending your approval and an availability check. Physical-device testing, broader document fixtures, and user pilots remain release gates.
 
+**Live demo:** [scanfit-two.vercel.app](https://scanfit-two.vercel.app)
+
 ## Run it locally
 
 Use Node 22. From this directory:
