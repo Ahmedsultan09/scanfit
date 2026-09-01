@@ -1,0 +1,8 @@
+node_modules/
+dist/
+packages/*/dist/
+test-results/
+playwright-report/
+work/
+*.tgz
+.vercel/

@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true, "emitDeclarationOnly": true, "noEmit": false,
+    "rootDir": "packages/scanfit/src", "outDir": "packages/scanfit/dist/types"
+  },
+  "include": ["packages/scanfit/src"], "exclude": ["**/*.test.ts"]
+}

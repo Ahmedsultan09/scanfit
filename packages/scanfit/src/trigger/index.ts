@@ -1,0 +1,1 @@
+export { ScannerTrigger } from "./ScannerTrigger";
