@@ -1,0 +1,36 @@
+name: Feature request
+description: Propose a focused improvement to the scan-to-upload workflow.
+title: "[Feature]: "
+labels: [enhancement, needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Who encounters the problem, and what can they not complete today?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe the behavior, not only an implementation or dependency.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Explain existing workarounds or why an opt-in extension would be appropriate.
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Size, privacy and accessibility effects
+      description: Note expected runtime bytes, network/storage behavior and non-drag interaction needs.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope confirmation
+      options:
+        - label: This request does not require silent quality loss, omitted pages or document uploads.
+          required: true

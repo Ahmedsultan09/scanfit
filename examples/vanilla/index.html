@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ScanFit · Vanilla TypeScript example</title>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Vanilla TypeScript</p>
+      <h1>Use the headless session core</h1>
+      <p>This minimal consumer imports images and prepares a PDF below an exact byte limit.</p>
+
+      <form id="scanner">
+        <label>Photos <input id="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple /></label>
+        <label>Maximum bytes <input id="limit" type="number" min="1" step="1" value="2000000" required /></label>
+        <button id="prepare" type="submit" disabled>Prepare PDF</button>
+      </form>
+
+      <p id="status" role="status">Choose one or more photos.</p>
+      <a id="download" hidden>Download confirmed PDF</a>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

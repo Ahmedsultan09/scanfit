@@ -3,8 +3,28 @@
   "version": "0.1.0-alpha.0",
   "private": true,
   "description": "Local, size-constrained scan-to-PDF workflows for the browser",
+  "keywords": [
+    "document-scanner",
+    "pdf",
+    "react",
+    "scan-to-pdf",
+    "typescript",
+    "web-worker"
+  ],
+  "homepage": "https://scanfit-two.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ahmedsultan09/scanfit.git",
+    "directory": "packages/scanfit"
+  },
+  "bugs": {
+    "url": "https://github.com/Ahmedsultan09/scanfit/issues"
+  },
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "sideEffects": ["**/*.css"],
   "files": ["dist", "LICENSE", "THIRD_PARTY_NOTICES.md"],
   "exports": {

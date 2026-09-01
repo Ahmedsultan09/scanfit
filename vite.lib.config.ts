@@ -5,6 +5,7 @@ import { classicalOnly } from "./build/classical-only";
 export default defineConfig({
   plugins: [classicalOnly()],
   base: "./",
+  publicDir: false,
   build: {
     outDir: "packages/scanfit/dist",
     lib: {

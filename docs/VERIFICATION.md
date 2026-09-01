@@ -1,22 +1,25 @@
 # Verification record
 
-Measured locally on 31 August 2026. This records evidence for the alpha implementation, not a public-beta certification.
+Updated 1 September 2026. This records reproducible evidence for the hosted alpha implementation, not a public-beta certification.
 
 ## Environment
 
 - Apple M4, arm64; macOS 26.5.1 (25F80), Darwin 25.5.0.
-- Installed Chrome 151.0.7922.175, headless automation; Node 22.23.2.
-- No physical Android or iPhone device was available. Firefox/WebKit browser installation failed because the host ran out of disk space; no unrelated user files were deleted. Checks continued with installed Chrome.
+- Installed Chrome 151.0.7922.175 plus Playwright Firefox 153 and WebKit 26.5 browser runtimes; Node 22.23.2.
+- GitHub Actions uses Ubuntu, Node 22, Playwright Chromium/Firefox/WebKit and qpdf. The successful run for commit `9afcbbe` is [available on GitHub](https://github.com/Ahmedsultan09/scanfit/actions/runs/33490572249).
+- No physical Android or iPhone device was available. Desktop browser engines and mobile viewports do not replace device camera, thermal, memory or native-codec testing.
 
 ## Automated checks
 
 - TypeScript checking, ESM library build and declaration generation: passed.
-- 45 unit tests: passed. Covers image headers/metadata, quad geometry, alpha compositing, rotation, exact byte boundaries, final PDF overhead, impossible budgets, non-monotonic encoders, cancellation, session disposal and worker failure/retry.
-- 8 Chrome browser scenarios: passed. Covers capture/import through explicit confirmation/download; actual worker operation; PDF.js decoding/rendering; all eight JPEG EXIF orientations; white alpha compositing; cannot-fit diagnostics; atomic replacement; cancellation/retry; keyboard/tap crop controls; RTL mobile viewport; dialog focus; denied/simulated camera permission; track cleanup; forced native-canvas bridge fallback; a native-resolution crop from a 25-megapixel source; and queued-job disposal without worker resurrection.
+- 47 unit tests: passed locally and in CI. Coverage includes image headers/metadata, removal of browser-added JPEG APP1 metadata, duplicate EXIF handling, quad geometry, alpha compositing, rotation, exact byte boundaries, final PDF overhead, impossible budgets, non-monotonic encoders, cancellation, session disposal and worker failure/retry.
+- 24 browser scenarios passed locally and in CI: the same eight workflows in Chromium, Firefox and WebKit. They cover capture/import through explicit confirmation/download; actual worker operation; PDF.js decoding/rendering; all eight JPEG EXIF orientations; white alpha compositing; cannot-fit diagnostics; atomic replacement; cancellation/retry; keyboard/tap crop controls; RTL mobile viewport; dialog focus; denied/simulated camera permission; track cleanup; forced native-canvas bridge fallback; a native-resolution crop from a 25-megapixel source; and queued-job disposal without worker resurrection.
 - Actual distributed entry points in production Vite and Webpack consumers: passed. Each imported a photo, exported a PDF below 100,000 bytes, opened the lazy dialog and loaded styles, with no failed asset requests or page exceptions. Node import checks passed without creating DOM/camera/worker resources.
-- Chrome privacy assertions found no external/document upload requests, no local/session storage entries, and no copied source EXIF or filenames in the test output. This is a scoped automated check, not a security audit of arbitrary host applications or plugins.
+- Runnable Vite React, Next.js App Router, vanilla TypeScript, Vue and Svelte examples build against the local package. Each emitted the processing worker; Next kept its route statically prerendered while dynamically loading the client scanner.
+- Cross-browser privacy assertions found no external document requests, no local/session storage entries, and no copied source EXIF or filenames in test output. WebKit-specific coverage verifies that APP1 metadata added by its native JPEG encoder is removed before PDF embedding. This remains a scoped automated check, not a security audit of arbitrary host applications or plugins.
 - `npm audit --audit-level=moderate`: zero reported vulnerabilities in the installed dependency graph. The test-only PDF.js renderer was updated to 6.2.108 before testing.
-- A CI workflow is included for three browser engines plus `qpdf --check`. It has not been run remotely. qpdf, native Preview/Acrobat and real screen-reader checks remain unverified here.
+- GitHub Actions passed the complete build, package-size, consumer, three-browser and `qpdf --check` workflow. Native Preview/Acrobat and real screen-reader checks remain unverified.
+- The production deployment at [scanfit-two.vercel.app](https://scanfit-two.vercel.app) returned its expected security headers and completed the three-page sample workflow through final PDF confirmation without browser errors.
 
 ## Runtime size
 
@@ -25,8 +28,8 @@ Measured by `npm run size`. Values are sums of individually compressed emitted a
 | Distribution scope | Raw bytes | Gzip bytes (KiB) | Brotli bytes (KiB) | Gzip target |
 | --- | ---: | ---: | ---: | ---: |
 | Trigger plus eagerly imported CSS | 11,250 | 3,465 (3.38) | 3,010 (2.94) | ≤5 KiB |
-| Core + React workflow + CSS/shared chunks | 62,378 | 17,408 (17.00) | 15,273 (14.92) | ≤35 KiB |
-| Every distributed runtime asset | 304,533 | 109,430 (106.87) | 94,959 (92.73) | ≤120 KiB |
+| Core + React workflow + CSS/shared chunks | 63,107 | 17,637 (17.22) | 15,462 (15.10) | ≤35 KiB |
+| Every distributed runtime asset | 306,001 | 109,858 (107.28) | 95,290 (93.06) | ≤120 KiB |
 
 The trigger JavaScript alone is 730 gzip bytes. The full conservative count includes JS, CSS, the processing worker and its embedded WASM, lazy entry points, **and** standalone detector/PDF adapters that duplicate some worker code. It excludes only host React, browser-native facilities, declarations and non-runtime documentation. There are no separately downloaded model or WASM assets. A consumer may load less; this record does not claim every host will reproduce identical wire sizes.
 
@@ -52,7 +55,7 @@ Source: `work/benchmark-report.json`, including raw timing samples and methodolo
 
 ## Visual evidence and limitations
 
-`work/workflow.png` shows final JPEG inspection and confirmed download. `work/mobile-rtl.png` shows the responsive RTL editor. `work/browser-export.pdf` is a generated synthetic document that can be opened in additional readers. PDF.js rendered test pages with nonempty content; that does not certify readability of faint handwriting, tiny type, signatures or complex documents.
+Local runs can generate `work/workflow.png`, `work/mobile-rtl.png` and `work/browser-export.pdf`. The CI run retains its `work/` and `test-results/` directories as a verification artifact. PDF.js rendered test pages with nonempty content, and qpdf accepted the generated structure; neither check certifies readability of faint handwriting, tiny type, signatures or complex documents.
 
 The React review led to explicit resource cleanup, stable session options, stale-job protection, immediate crop commits, focus handling and non-drag controls. The documentation is organized around the supplied implementation plan and observed test results; release targets are kept separate from measurements.
 

@@ -2,7 +2,7 @@
   "name": "scanfit-workspace",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": ["packages/*", "examples/*"],
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json && node scripts/notices.mjs && vite build",
@@ -11,8 +11,9 @@
     "test:e2e": "playwright test",
     "size": "node scripts/size.mjs",
     "test:consumers": "node scripts/consumers.mjs",
+    "test:examples": "node scripts/examples.mjs",
     "benchmark": "node scripts/benchmark.mjs",
-    "verify": "npm run typecheck && npm test && npm run build && npm run size && npm run test:consumers"
+    "verify": "npm run typecheck && npm test && npm run build && npm run size && npm run test:consumers && npm run test:examples"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",

@@ -1,0 +1,8 @@
+:root { color: #171815; background: #f4f1e8; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+body { margin: 0; }
+.example-shell { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; padding: 3rem 0; }
+.example-shell > header { max-width: 720px; margin-bottom: 2rem; }
+.example-shell h1 { margin: 0.3rem 0; font-size: clamp(2rem, 5vw, 4rem); }
+.eyebrow { color: #315f42; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.result { padding: 1rem; background: #e3f2df; border: 1px solid #315f42; }
+.result a { color: inherit; font-weight: 800; }

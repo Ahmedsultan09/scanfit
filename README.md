@@ -2,7 +2,7 @@
 
 An MIT-licensed TypeScript library for **capture/import → correct pages → fit an upload limit → inspect → return a PDF File**. React components are optional; document processing happens locally in a worker.
 
-**Status: local alpha implementation, not a release-certified beta.** Nothing has been published. `@scanfit/browser` is a private working package name, pending your approval and an availability check. Physical-device testing, broader document fixtures, and user pilots remain release gates.
+**Status: hosted alpha implementation, not a release-certified beta.** The demo is deployed and the cross-browser CI suite is green, but the package has not been published. `@scanfit/browser` remains a private working name pending approval and namespace ownership. Physical-device testing, broader document fixtures, and user pilots remain release gates.
 
 **Live demo:** [scanfit-two.vercel.app](https://scanfit-two.vercel.app)
 
@@ -23,7 +23,7 @@ npm run test:e2e       # browser workflow, pixels, PDF rendering, lifecycle
 npm run benchmark     # requires the dev server; desktop smoke measurements
 ```
 
-Browser checks use the installed Chrome on macOS when available. Else install Playwright Chromium with `npx playwright install chromium`, or set `SCANFIT_CHROME` to an executable. Set `SCANFIT_ALL_BROWSERS=1` to include Firefox and WebKit after installing their Playwright browsers. Emulation is not a substitute for physical phones.
+Browser checks use the installed Chrome on macOS when available. Otherwise install Playwright Chromium with `npx playwright install chromium`, or set `SCANFIT_CHROME` to an executable. Set `SCANFIT_ALL_BROWSERS=1` to include Firefox and WebKit after installing their Playwright browsers. GitHub Actions runs all three engines and validates the generated PDF with qpdf. Emulation is not a substitute for physical phones.
 
 ## React integration
 
@@ -106,6 +106,16 @@ try {
 
 The example’s application functions are placeholders. A headless consumer owns final confirmation and must retain its session until editing is finished. `File` and preview `Blob` objects already returned remain valid after session disposal if the host retains them.
 
+## Framework examples
+
+Runnable consumers live in [`examples/`](examples/README.md):
+
+- Vite + React uses the lazy `ScannerTrigger` and complete scanner dialog.
+- Next.js App Router places the scanner behind an explicit client boundary.
+- Vanilla TypeScript, Vue and Svelte demonstrate the framework-independent session core.
+
+`npm run test:examples` builds all five against the local package. These examples use the workspace version during development; after publishing, an external application will install the registry version instead.
+
 ### Session operations
 
 | Method                                         | Behavior                                                                                                       |
@@ -182,6 +192,16 @@ Provide `messages` to replace user-facing UI labels and explanations, and `loadi
 
 ## Evidence and next steps
 
-See [verification notes](docs/VERIFICATION.md) for measured sizes, the desktop benchmark, checked behavior and pending release gates. [The release checklist](docs/RELEASE_CHECKLIST.md) maps the remaining work to the implementation plan. Generated raw evidence lives in `work/`; regenerate it with the commands above.
+See [verification notes](docs/VERIFICATION.md) for measured sizes, the desktop benchmark, checked behavior and pending release gates. [The release checklist](docs/RELEASE_CHECKLIST.md) maps the remaining work to the implementation plan. The hosted CI run and local commands regenerate evidence; raw local artifacts live in the ignored `work/` directory.
 
 MIT licensed. Package publishing and the final name require separate approval.
+
+## Community and maintenance
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request or sharing a fixture.
+- Ask usage questions in [GitHub Discussions](https://github.com/Ahmedsultan09/scanfit/discussions).
+- Use the structured issue forms for bugs and feature requests.
+- Report vulnerabilities privately according to [SECURITY.md](SECURITY.md).
+- Follow unreleased changes in [CHANGELOG.md](CHANGELOG.md).
+
+Public reports must use synthetic, licensed or fully redacted documents. ScanFit is currently maintained as an unpaid alpha without guaranteed support times.

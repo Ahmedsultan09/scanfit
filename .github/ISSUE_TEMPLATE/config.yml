@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Integration questions
+    url: https://github.com/Ahmedsultan09/scanfit/discussions
+    about: Ask for help using ScanFit in an application.
+  - name: Security vulnerability
+    url: https://github.com/Ahmedsultan09/scanfit/security/advisories/new
+    about: Report a security or privacy problem privately.
+  - name: Live demo
+    url: https://scanfit-two.vercel.app
+    about: Reproduce the public scan-to-PDF workflow.

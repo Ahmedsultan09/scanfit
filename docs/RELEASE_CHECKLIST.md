@@ -11,15 +11,17 @@ The code implements the planned beta workflow. Do not interpret local automated 
 - [x] Cancellation, stale-job rejection, worker/canvas fallback, source/URL/bitmap cleanup and camera track shutdown.
 - [x] ESM/types, SSR-safe import checks, production Vite/Webpack consumer checks, synthetic fixtures and local documentation.
 - [x] Runtime-size budget check and desktop performance smoke measurements.
-- [x] CI workflow prepared for Chromium, Firefox, WebKit and qpdf. The remote workflow has not been executed here.
+- [x] CI workflow passed remotely for Chromium, Firefox, WebKit and qpdf on commit `9afcbbe`.
+- [x] Runnable Vite React, Next.js App Router, vanilla TypeScript, Vue and Svelte examples with automated production builds.
 
 ## Before calling this a public beta
 
 - [ ] Run the worker, camera, codec-fallback and export feasibility gate on a physical Pixel 4a-class device and iPhone SE (2nd generation). Record exact OS/browser versions, cold/warm timing distributions and thermal conditions.
-- [ ] Run Firefox and WebKit automation. Browser downloads failed locally because of disk space; only installed Chrome was tested in this environment.
-- [ ] Validate generated PDFs with qpdf; check Chrome, Firefox, Safari/Preview and Acrobat manually. PDF.js rendering is already automated but does not cover every reader.
+- [x] Run the full Playwright workflow in Chromium, Firefox and WebKit locally and in GitHub Actions.
+- [x] Validate the generated CI PDF with `qpdf --check` and render it with PDF.js automation.
+- [ ] Open representative generated PDFs manually in Chrome, Firefox, Safari/Preview and Acrobat. Automated structure and rendering checks do not cover every reader.
 - [ ] Expand the licensed fixture corpus beyond synthetic examples: small/faint text, handwriting, colored stamps, signatures, Arabic/Latin documents, shadows, creases, glare, clipped borders, extreme perspective and corrupted/hostile files. Define tolerances and review exported pixels against the source.
-- [ ] Exercise PNG/WebP EXIF and JPEG orientation on Safari’s native image decoder, not only Chrome. Verify embedded color profiles and device camera formats.
+- [ ] Exercise PNG/WebP EXIF and JPEG orientation on physical Safari, not only Playwright WebKit. Verify embedded color profiles and device camera formats.
 - [ ] Audit browser-native image/canvas/WASM memory separately from JavaScript heap and tracked buffers. Run repeated 1-, 5-, 20-page sessions on both phones; record resource-retention observations after disposal.
 - [ ] Validate main-thread task durations, worst-case 12-encode searches, cancellation responsiveness, offline behavior and strict CSP deployment on those devices.
 - [ ] Manual screen-reader, keyboard-only, tap-only, 200%/400% zoom and RTL trials; inspect contrast and focus when pages are removed or the workflow changes views.
