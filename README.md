@@ -2,7 +2,7 @@
 
 An MIT-licensed TypeScript library for **capture/import → correct pages → fit an upload limit → inspect → return a PDF File**. React components are optional; document processing happens locally in a worker.
 
-**Status: hosted alpha implementation, not a release-certified beta.** The demo is deployed and the cross-browser CI suite is green, but the package has not been published. `@scanfit/browser` remains a private working name pending approval and namespace ownership. Physical-device testing, broader document fixtures, and user pilots remain release gates.
+**Status: public alpha, not a release-certified beta.** `@scanfit/browser@0.1.0-alpha.0` is published on npm, the demo is deployed, and the cross-browser CI suite is green. Physical-device testing, broader document fixtures, and user pilots remain release gates.
 
 **Live demo:** [scanfit-two.vercel.app](https://scanfit-two.vercel.app)
 
@@ -27,7 +27,13 @@ Browser checks use the installed Chrome on macOS when available. Otherwise insta
 
 ## React integration
 
-Build first with `npm run build`. The workspace links `@scanfit/browser` locally. Other projects can install the local `packages/scanfit` directory; do not run an npm registry install for this unapproved name.
+Install the public alpha through the `next` tag:
+
+```sh
+npm install @scanfit/browser@next
+```
+
+The workspace links `@scanfit/browser` locally when developing this repository.
 
 ```tsx
 import { DocumentScanner } from "@scanfit/browser/react";
@@ -114,7 +120,7 @@ Runnable consumers live in [`examples/`](examples/README.md):
 - Next.js App Router places the scanner behind an explicit client boundary.
 - Vanilla TypeScript, Vue and Svelte demonstrate the framework-independent session core.
 
-`npm run test:examples` builds all five against the local package. These examples use the workspace version during development; after publishing, an external application will install the registry version instead.
+`npm run test:examples` builds all five against the local package. External applications can install the published alpha with `npm install @scanfit/browser@next`.
 
 ### Session operations
 
@@ -196,7 +202,7 @@ Provide `messages` to replace user-facing UI labels and explanations, and `loadi
 
 See [verification notes](docs/VERIFICATION.md) for measured sizes, the desktop benchmark, checked behavior and pending release gates. [The release checklist](docs/RELEASE_CHECKLIST.md) maps the remaining work to the implementation plan. The hosted CI run and local commands regenerate evidence; raw local artifacts live in the ignored `work/` directory.
 
-MIT licensed. Package publishing and the final name require separate approval.
+MIT licensed. See [the publishing guide](docs/PUBLISHING.md) for versioning, release tags and the trusted-publisher workflow.
 
 ## Community and maintenance
 

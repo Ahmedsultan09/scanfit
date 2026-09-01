@@ -1,8 +1,10 @@
 # Changelog
 
-Notable changes to ScanFit will be recorded here. The project follows [Semantic Versioning](https://semver.org/) once packages begin publishing.
+Notable changes to ScanFit will be recorded here. The project follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
+
+## 0.1.0-alpha.0 - 2026-09-01
 
 ### Added
 
@@ -15,10 +17,11 @@ Notable changes to ScanFit will be recorded here. The project follows [Semantic 
 - Runnable Vite React, Next.js, vanilla TypeScript, Vue and Svelte consumers.
 - Contribution, conduct, support, security and dependency-maintenance policies.
 - Independent typed-array document detector with region and Hough-line candidates, evidence diagnostics, configurable confidence gates and manual fallback; Scanic is no longer a dependency.
+- First public npm alpha as `@scanfit/browser`, published under the `next` distribution tag.
 
 ### Security
 
 - Fresh JPEG encoding and removal of EXIF/XMP APP1 metadata before PDF embedding.
 - Input, page, pixel and session limits before image processing.
 
-No npm package or stable API has been released yet.
+This is an alpha release. The API may change before the public beta.

@@ -13,6 +13,7 @@ The code implements the planned beta workflow. Do not interpret local automated 
 - [x] Runtime-size budget check and desktop performance smoke measurements.
 - [x] CI workflow passed remotely for Chromium, Firefox, WebKit and qpdf on independent-detector commit `c6fb3ef`.
 - [x] Runnable Vite React, Next.js App Router, vanilla TypeScript, Vue and Svelte examples with automated production builds.
+- [x] Public `@scanfit/browser@0.1.0-alpha.0` npm release and clean registry-consumer import check.
 
 ## Before calling this a public beta
 
@@ -27,7 +28,8 @@ The code implements the planned beta workflow. Do not interpret local automated 
 - [ ] Manual screen-reader, keyboard-only, tap-only, 200%/400% zoom and RTL trials; inspect contrast and focus when pages are removed or the workflow changes views.
 - [ ] Dependency/security review, malformed-file fuzzing, unsupported-format recovery and host integration documentation review.
 - [ ] Three developer integrations and ten user trials; triage and resolve release-blocking findings.
-- [ ] Check and approve the final package name, remove the private publishing safeguard only with approval, and decide the release/version process.
+- [x] Approve the `@scanfit/browser` package name, remove the private publishing safeguard, and publish the first alpha under the `next` tag.
+- [ ] Configure npm Trusted Publishing for `.github/workflows/publish.yml`, then verify one automated prerelease before relying on it for future releases.
 
 ## Deferred enhancements, in order
 

@@ -1,7 +1,6 @@
 {
   "name": "@scanfit/browser",
   "version": "0.1.0-alpha.0",
-  "private": false,
   "description": "Local, size-constrained scan-to-PDF workflows for the browser",
   "keywords": [
     "document-scanner",
@@ -66,5 +65,8 @@
   },
   "dependencies": {
     "tinypdf": "0.4.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
