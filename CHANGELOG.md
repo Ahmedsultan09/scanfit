@@ -4,6 +4,10 @@ Notable changes to ScanFit will be recorded here. The project follows [Semantic 
 
 ## Unreleased
 
+### Added
+
+- Package-level npm README with installation, integration examples, constraints and documentation links.
+
 ## 0.1.0-alpha.0 - 2026-09-01
 
 ### Added
