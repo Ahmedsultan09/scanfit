@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build"
   },
   "dependencies": {
-    "@scanfit/browser": "0.1.0-alpha.2"
+    "@scanfit/browser": "0.1.0-alpha.3"
   },
   "devDependencies": {
     "typescript": "^5.9.0",

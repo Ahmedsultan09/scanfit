@@ -4,6 +4,8 @@ Notable changes to ScanFit will be recorded here. The project follows [Semantic 
 
 ## Unreleased
 
+## 0.1.0-alpha.3 - 2026-09-03
+
 ### Added
 
 - Named scanner section slots with state, messages, workflow actions and built-in fallback content.

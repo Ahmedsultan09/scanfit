@@ -2,7 +2,7 @@
 
 An MIT-licensed TypeScript library for **capture/import → correct pages → fit an upload limit → inspect → return a PDF File**. React components are optional; document processing happens locally in a worker.
 
-**Status: public alpha, not a release-certified beta.** `@scanfit/browser@0.1.0-alpha.2` is published on npm, the demo is deployed, and the cross-browser CI suite is green. Physical-device testing, broader document fixtures, and user pilots remain release gates.
+**Status: public alpha, not a release-certified beta.** `@scanfit/browser@0.1.0-alpha.3` is published on npm, the demo is deployed, and the cross-browser CI suite is green. Physical-device testing, broader document fixtures, and user pilots remain release gates.
 
 **Live demo:** [scanfit-two.vercel.app](https://scanfit-two.vercel.app)
 
