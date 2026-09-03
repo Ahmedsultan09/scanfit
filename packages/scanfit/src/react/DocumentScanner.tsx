@@ -1,16 +1,21 @@
 import {
+  useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
+  type HTMLAttributes,
   type ReactNode,
 } from "react";
 import {
   type ScanSession,
   type SessionOptions,
   type ScanPage,
+  type ScanSnapshot,
   type ExportReport,
+  type ExportResult,
+  type PageEdits,
   type PageSize,
   type Warning,
 } from "../core";
@@ -19,6 +24,71 @@ import { defaultMessages, formatBytes, type ScannerMessages } from "./messages";
 import { CornerEditor } from "./CornerEditor";
 import { Camera } from "./Camera";
 import "./styles.css";
+
+export type ScannerEditorView = "crop" | "preview";
+
+export type ScannerPart =
+  | "root"
+  | "header"
+  | "closeButton"
+  | "error"
+  | "progress"
+  | "camera"
+  | "empty"
+  | "toolbar"
+  | "workspace"
+  | "pageList"
+  | "thumbnail"
+  | "editor"
+  | "pageActions"
+  | "footer"
+  | "privacy"
+  | "review"
+  | "primaryAction";
+
+export type ScannerSlotName = Exclude<
+  ScannerPart,
+  "root" | "closeButton" | "thumbnail" | "primaryAction"
+>;
+
+export type ScannerSlotProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
+  [attribute: `data-${string}`]: string | number | boolean | undefined;
+};
+
+export interface ScannerSlotContext {
+  session: ScanSession | null;
+  pages: readonly ScanPage[];
+  status: ScanSnapshot["status"];
+  progress: number;
+  result: ExportResult | null;
+  selectedPage: ScanPage | undefined;
+  selectedIndex: number;
+  pageSize: PageSize;
+  editorView: ScannerEditorView;
+  maxBytes: number;
+  busy: boolean;
+  messages: ScannerMessages;
+  actions: {
+    addFiles(files: Iterable<Blob>, replacePageId?: string): Promise<void>;
+    openFilePicker(): void;
+    openCamera(replacePageId?: string): void;
+    selectPage(pageId: string): void;
+    setEditorView(view: ScannerEditorView): void;
+    setPageSize(pageSize: PageSize): void;
+    updatePage(pageId: string, edits: Partial<PageEdits>): void;
+    movePage(pageId: string, index: number): void;
+    removePage(pageId: string): void;
+    prepare(): Promise<void>;
+    cancel(): void;
+    close(): void;
+    confirm(): void;
+  };
+}
+
+export type ScannerSlotRenderer = (
+  context: ScannerSlotContext,
+  defaultContent: ReactNode,
+) => ReactNode;
 
 export interface DocumentScannerProps {
   maxBytes: number;
@@ -31,12 +101,90 @@ export interface DocumentScannerProps {
   messages?: Partial<ScannerMessages>;
   dir?: "ltr" | "rtl";
   className?: string;
+  style?: CSSProperties;
+  /** Stable classes for styling individual scanner parts. */
+  classNames?: Partial<Record<ScannerPart, string>>;
+  /** Attributes applied to structural parts of the built-in interface. */
+  slotProps?: Partial<Record<ScannerSlotName | "root", ScannerSlotProps>>;
+  /** Replace a built-in section while retaining access to its default content. */
+  slots?: Partial<Record<ScannerSlotName, ScannerSlotRenderer>>;
+  pageSize?: PageSize;
+  defaultPageSize?: PageSize;
+  onPageSizeChange?: (pageSize: PageSize) => void;
+  selectedPageId?: string;
+  defaultSelectedPageId?: string;
+  onSelectedPageIdChange?: (pageId: string) => void;
+  editorView?: ScannerEditorView;
+  defaultEditorView?: ScannerEditorView;
+  onEditorViewChange?: (view: ScannerEditorView) => void;
+  onPagesChange?: (pages: readonly ScanPage[]) => void;
+  onStatusChange?: (status: ScanSnapshot["status"]) => void;
+  onProgress?: (progress: number) => void;
+  onResultChange?: (result: ExportResult | null) => void;
   renderHeader?: (context: {
     pageCount: number;
     maxBytes: number;
   }) => ReactNode;
   renderPageSummary?: (page: ScanPage, index: number) => ReactNode;
 }
+
+function joinClasses(...values: Array<string | undefined>) {
+  return values.filter(Boolean).join(" ");
+}
+
+function useControllableState<T>(
+  value: T | undefined,
+  defaultValue: T,
+  onChange: ((value: T) => void) | undefined,
+) {
+  const [internal, setInternal] = useState(defaultValue);
+  const current = value === undefined ? internal : value;
+  const set = useCallback(
+    (next: T) => {
+      if (Object.is(current, next)) return;
+      if (value === undefined) setInternal(next);
+      onChange?.(next);
+    },
+    [current, onChange, value],
+  );
+  return [current, set] as const;
+}
+
+function useChangeEffect<T>(
+  value: T,
+  onChange: ((value: T) => void) | undefined,
+) {
+  const previous = useRef(value);
+  useEffect(() => {
+    if (Object.is(previous.current, value)) return;
+    previous.current = value;
+    onChange?.(value);
+  }, [onChange, value]);
+}
+
+function samePages(left: readonly ScanPage[], right: readonly ScanPage[]) {
+  if (left.length !== right.length) return false;
+  return left.every((page, index) => {
+    const other = right[index];
+    return (
+      page.id === other.id &&
+      page.width === other.width &&
+      page.height === other.height &&
+      page.sourceBytes === other.sourceBytes &&
+      page.preview === other.preview &&
+      page.thumbnail === other.thumbnail &&
+      page.edits.rotation === other.edits.rotation &&
+      page.edits.filter === other.edits.filter &&
+      page.warnings.join("|") === other.warnings.join("|") &&
+      page.edits.corners.every(
+        (point, pointIndex) =>
+          point.x === other.edits.corners[pointIndex].x &&
+          point.y === other.edits.corners[pointIndex].y,
+      )
+    );
+  });
+}
+
 const warningKey: Record<Warning, keyof ScannerMessages> = {
   "manual-crop": "manualCrop",
   "detection-unavailable": "detectorUnavailable",
@@ -51,18 +199,24 @@ function Thumbnail({
   selected,
   onSelect,
   m,
+  className,
 }: {
   page: ScanPage;
   index: number;
   selected: boolean;
   onSelect: () => void;
   m: ScannerMessages;
+  className?: string;
 }) {
   const url = useObjectUrl(page.thumbnail);
   return (
     <button
       type="button"
-      className={`sf-thumbnail ${selected ? "sf-current" : ""}`}
+      className={joinClasses(
+        "sf-thumbnail",
+        selected ? "sf-current" : undefined,
+        className,
+      )}
       aria-pressed={selected}
       aria-label={`${m.page} ${index + 1}`}
       onClick={onSelect}
@@ -72,15 +226,20 @@ function Thumbnail({
     </button>
   );
 }
-function ProcessedPreview({
-  session,
-  page,
-  m,
-}: {
+export interface ProcessedPreviewProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, "children"> {
   session: ScanSession;
   page: ScanPage;
-  m: ScannerMessages;
-}) {
+  messages: ScannerMessages;
+}
+
+export function ProcessedPreview({
+  session,
+  page,
+  messages: m,
+  className = "",
+  ...containerProps
+}: ProcessedPreviewProps) {
   const [blob, setBlob] = useState<Blob | null>(null),
     [error, setError] = useState("");
   const url = useObjectUrl(blob);
@@ -105,7 +264,10 @@ function ProcessedPreview({
     page.edits.rotation,
   ]);
   return (
-    <div className="sf-processed">
+    <div
+      {...containerProps}
+      className={joinClasses("sf-primitive", "sf-processed", className)}
+    >
       {error ? (
         <p role="alert">{error}</p>
       ) : url ? (
@@ -116,19 +278,26 @@ function ProcessedPreview({
     </div>
   );
 }
-function ExportReview({
-  report,
-  ready,
-  onBack,
-  onConfirm,
-  m,
-}: {
+export interface ExportReviewProps
+  extends Omit<HTMLAttributes<HTMLElement>, "children"> {
   report: ExportReport;
   ready: boolean;
   onBack: () => void;
   onConfirm: () => void;
-  m: ScannerMessages;
-}) {
+  messages: ScannerMessages;
+  primaryActionClassName?: string;
+}
+
+export function ExportReview({
+  report,
+  ready,
+  onBack,
+  onConfirm,
+  messages: m,
+  primaryActionClassName,
+  className = "",
+  ...sectionProps
+}: ExportReviewProps) {
   const [index, setIndex] = useState(0),
     [zoom, setZoom] = useState(100),
     heading = useRef<HTMLHeadingElement>(null);
@@ -136,7 +305,10 @@ function ExportReview({
     url = useObjectUrl(selected.preview);
   useEffect(() => heading.current?.focus(), []);
   return (
-    <section className="sf-review">
+    <section
+      {...sectionProps}
+      className={joinClasses("sf-primitive", "sf-review", className)}
+    >
       <div className={`sf-result-banner ${ready ? "" : "sf-warning"}`}>
         <span className="sf-result-icon" aria-hidden="true">
           {ready ? "✓" : "!"}
@@ -237,7 +409,11 @@ function ExportReview({
           {m.back}
         </button>
         {ready ? (
-          <button type="button" className="sf-primary" onClick={onConfirm}>
+          <button
+            type="button"
+            className={joinClasses("sf-primary", primaryActionClassName)}
+            onClick={onConfirm}
+          >
             {m.confirm} <span aria-hidden="true">↗</span>
           </button>
         ) : null}
@@ -265,15 +441,26 @@ export function DocumentScanner(props: DocumentScannerProps) {
     options,
     external,
   );
-  const [selectedId, setSelectedId] = useState(""),
-    [tab, setTab] = useState<"crop" | "preview">("crop"),
+  const [selectedId, setSelectedId] = useControllableState(
+      props.selectedPageId,
+      props.defaultSelectedPageId ?? "",
+      props.onSelectedPageIdChange,
+    ),
+    [tab, setTab] = useControllableState(
+      props.editorView,
+      props.defaultEditorView ?? "crop",
+      props.onEditorViewChange,
+    ),
+    [pageSize, setPageSize] = useControllableState(
+      props.pageSize,
+      props.defaultPageSize ?? "a4",
+      props.onPageSizeChange,
+    ),
     [camera, setCamera] = useState(false),
-    [error, setError] = useState(""),
-    [pageSize, setPageSize] = useState<PageSize>("a4");
+    [error, setError] = useState("");
   const [replacement, setReplacement] = useState<string | undefined>();
   const input = useRef<HTMLInputElement>(null),
-    replaceInput = useRef<HTMLInputElement>(null),
-    titleId = useId();
+    replaceInput = useRef<HTMLInputElement>(null);
   const busy = status !== "idle",
     page = pages.find((p) => p.id === selectedId) ?? pages[0],
     index = page ? pages.indexOf(page) : -1;
@@ -283,6 +470,18 @@ export function DocumentScanner(props: DocumentScannerProps) {
   useEffect(() => {
     session?.cancel();
   }, [session, maxBytes, minQuality, minLongEdge]);
+  const previousPages = useRef(pages);
+  useEffect(() => {
+    if (samePages(previousPages.current, pages)) {
+      previousPages.current = pages;
+      return;
+    }
+    previousPages.current = pages;
+    props.onPagesChange?.(pages);
+  }, [pages, props.onPagesChange]);
+  useChangeEffect(status, props.onStatusChange);
+  useChangeEffect(progress, props.onProgress);
+  useChangeEffect(result, props.onResultChange);
   function fail(value: unknown) {
     const e = value instanceof Error ? value : new Error(String(value));
     setError(e.message);
@@ -306,12 +505,31 @@ export function DocumentScanner(props: DocumentScannerProps) {
     setError("");
     try {
       action();
+      return true;
     } catch (e) {
       fail(e);
+      return false;
     }
   }
   function close() {
     if (!pages.length || window.confirm(m.discard)) onClose?.();
+  }
+  function openCamera(replacePageId?: string) {
+    setReplacement(replacePageId);
+    setCamera(true);
+  }
+  function selectPage(pageId: string) {
+    setSelectedId(pageId);
+    setTab("crop");
+  }
+  function removePage(pageId: string) {
+    if (!session) return;
+    const removedIndex = pages.findIndex((item) => item.id === pageId);
+    if (!edit(() => session.removePage(pageId))) return;
+    if (page?.id === pageId) {
+      const fallback = pages[removedIndex + 1] ?? pages[removedIndex - 1];
+      setSelectedId(fallback?.id ?? "");
+    }
   }
   async function prepare() {
     if (!session || !validLimit) return;
@@ -323,38 +541,95 @@ export function DocumentScanner(props: DocumentScannerProps) {
       fail(e);
     }
   }
+  function confirm() {
+    if (result?.status === "ready" && result.file.size <= maxBytes)
+      onComplete({ file: result.file, report: result.report });
+  }
   const report = result && result.status !== "cancelled" ? result.report : null;
+  const classFor = (part: ScannerPart, base?: string) =>
+    joinClasses(base, props.classNames?.[part]);
+  const partProps = (part: ScannerSlotName | "root", base?: string) => {
+    const configured = props.slotProps?.[part];
+    return {
+      ...configured,
+      className: joinClasses(
+        base,
+        part === "root" ? className : undefined,
+        props.classNames?.[part],
+        configured?.className,
+      ),
+      style: {
+        ...(part === "root" ? props.style : undefined),
+        ...configured?.style,
+      },
+      "data-scanfit-part": part,
+    };
+  };
+  const actions: ScannerSlotContext["actions"] = {
+    addFiles: add,
+    openFilePicker: () => input.current?.click(),
+    openCamera,
+    selectPage,
+    setEditorView: setTab,
+    setPageSize,
+    updatePage: (pageId, edits) =>
+      edit(() => session?.updatePage(pageId, edits)),
+    movePage: (pageId, targetIndex) =>
+      edit(() => session?.movePage(pageId, targetIndex)),
+    removePage,
+    prepare,
+    cancel: () => session?.cancel(),
+    close,
+    confirm,
+  };
+  const slotContext: ScannerSlotContext = {
+    session,
+    pages,
+    status,
+    progress,
+    result,
+    selectedPage: page,
+    selectedIndex: index,
+    pageSize,
+    editorView: tab,
+    maxBytes,
+    busy,
+    messages: m,
+    actions,
+  };
+  const slot = (name: ScannerSlotName, content: ReactNode) =>
+    props.slots?.[name]?.(slotContext, content) ?? content;
   return (
     <section
-      className={`sf-scanner ${className}`}
+      {...partProps("root", "sf-scanner")}
       dir={dir}
-      aria-labelledby={titleId}
+      aria-label={props.slotProps?.root?.["aria-label"] ?? m.title}
     >
-      <header className="sf-header">
+      {slot("header", <header {...partProps("header", "sf-header")}>
         {props.renderHeader ? (
           <div>
-            <h2 id={titleId} className="sf-file-input">
+            <h2 className="sf-file-input">
               {m.title}
             </h2>
             {props.renderHeader({ pageCount: pages.length, maxBytes })}
           </div>
         ) : (
           <div>
-            <h2 id={titleId}>{m.title}</h2>
+            <h2>{m.title}</h2>
             <p>{m.subtitle}</p>
           </div>
         )}
         {onClose ? (
           <button
             type="button"
-            className="sf-icon-button"
+            className={classFor("closeButton", "sf-icon-button")}
             aria-label={m.close}
             onClick={close}
           >
             ×
           </button>
         ) : null}
-      </header>
+      </header>)}
       <input
         ref={input}
         className="sf-file-input"
@@ -385,18 +660,25 @@ export function DocumentScanner(props: DocumentScannerProps) {
           if (files.length) void add(files, replacement);
         }}
       />
-      {error ? (
-        <div className="sf-error" role="alert">
-          {error}
-        </div>
-      ) : null}
-      {!validLimit ? (
-        <div className="sf-error" role="alert">
-          {m.invalidLimit}
-        </div>
-      ) : null}
+      {error || !validLimit
+        ? slot(
+            "error",
+            <div {...partProps("error", "sf-errors")}>
+              {error ? (
+                <div className="sf-error" role="alert">
+                  {error}
+                </div>
+              ) : null}
+              {!validLimit ? (
+                <div className="sf-error" role="alert">
+                  {m.invalidLimit}
+                </div>
+              ) : null}
+            </div>,
+          )
+        : null}
       {busy ? (
-        <div className="sf-progress" role="status">
+        slot("progress", <div {...partProps("progress", "sf-progress")} role="status">
           <div>
             <span>{status === "importing" ? m.importing : m.preparing}</span>
             <button type="button" onClick={() => session?.cancel()}>
@@ -404,30 +686,36 @@ export function DocumentScanner(props: DocumentScannerProps) {
             </button>
           </div>
           <progress max={1} value={progress} />
-        </div>
+        </div>)
       ) : null}
       {camera ? (
-        <Camera
+        slot("camera", <Camera
+          {...partProps("camera")}
           messages={m}
+          primaryActionClassName={props.classNames?.primaryAction}
           onClose={() => setCamera(false)}
           onCapture={(file) => void add([file], replacement)}
-        />
+        />)
       ) : report ? (
-        <ExportReview
+        slot("review", <ExportReview
+          {...partProps("review")}
           report={report}
           ready={result?.status === "ready" && result.file.size <= maxBytes}
-          m={m}
+          messages={m}
+          primaryActionClassName={props.classNames?.primaryAction}
           onBack={() => session?.cancel()}
-          onConfirm={() => {
-            if (result?.status === "ready" && result.file.size <= maxBytes)
-              onComplete({ file: result.file, report: result.report });
-          }}
-        />
+          onConfirm={confirm}
+        />)
       ) : !pages.length ? (
-        <div
-          className="sf-empty"
-          onDragOver={(e) => e.preventDefault()}
+        slot("empty", <div
+          {...partProps("empty", "sf-empty")}
+          onDragOver={(e) => {
+            props.slotProps?.empty?.onDragOver?.(e);
+            if (!e.defaultPrevented) e.preventDefault();
+          }}
           onDrop={(e) => {
+            props.slotProps?.empty?.onDrop?.(e);
+            if (e.defaultPrevented) return;
             e.preventDefault();
             if (!busy) void add(Array.from(e.dataTransfer.files));
           }}
@@ -444,7 +732,7 @@ export function DocumentScanner(props: DocumentScannerProps) {
           <div className="sf-empty-actions">
             <button
               type="button"
-              className="sf-primary"
+              className={classFor("primaryAction", "sf-primary")}
               disabled={!session || busy}
               onClick={() => input.current?.click()}
             >
@@ -453,19 +741,16 @@ export function DocumentScanner(props: DocumentScannerProps) {
             <button
               type="button"
               disabled={!session || busy}
-              onClick={() => {
-                setReplacement(undefined);
-                setCamera(true);
-              }}
+              onClick={() => openCamera()}
             >
               {m.camera}
             </button>
           </div>
           <small>{m.formats}</small>
-        </div>
+        </div>)
       ) : (
         <>
-          <div className="sf-toolbar">
+          {slot("toolbar", <div {...partProps("toolbar", "sf-toolbar")}>
             <div className="sf-count">
               {pages.length} {m.pages.toLowerCase()}
             </div>
@@ -480,34 +765,29 @@ export function DocumentScanner(props: DocumentScannerProps) {
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => {
-                  setReplacement(undefined);
-                  setCamera(true);
-                }}
+                onClick={() => openCamera()}
               >
                 {m.camera}
               </button>
             </div>
-          </div>
-          <div className="sf-workspace">
-            <aside className="sf-pages" aria-label={m.pages}>
+          </div>)}
+          {slot("workspace", <div {...partProps("workspace", "sf-workspace")}>
+            {slot("pageList", <aside {...partProps("pageList", "sf-pages")} aria-label={m.pages}>
               {pages.map((p, i) => (
                 <div key={p.id}>
                   <Thumbnail
                     page={p}
                     index={i}
                     selected={p.id === page?.id}
-                    onSelect={() => {
-                      setSelectedId(p.id);
-                      setTab("crop");
-                    }}
+                    onSelect={() => selectPage(p.id)}
                     m={m}
+                    className={props.classNames?.thumbnail}
                   />
                   {props.renderPageSummary?.(p, i)}
                 </div>
               ))}
-            </aside>
-            <div className="sf-editor">
+            </aside>)}
+            {slot("editor", <div {...partProps("editor", "sf-editor")}>
               {page && session ? (
                 <>
                   <div className="sf-editor-heading">
@@ -543,9 +823,13 @@ export function DocumentScanner(props: DocumentScannerProps) {
                       }
                     />
                   ) : (
-                    <ProcessedPreview session={session} page={page} m={m} />
+                    <ProcessedPreview
+                      session={session}
+                      page={page}
+                      messages={m}
+                    />
                   )}
-                  <div className="sf-page-actions">
+                  {slot("pageActions", <div {...partProps("pageActions", "sf-page-actions")}>
                     <label>
                       {m.filter}
                       <select
@@ -622,12 +906,12 @@ export function DocumentScanner(props: DocumentScannerProps) {
                       disabled={busy}
                       onClick={() => {
                         if (window.confirm(m.removeConfirm))
-                          edit(() => session.removePage(page.id));
+                          removePage(page.id);
                       }}
                     >
                       {m.remove}
                     </button>
-                  </div>
+                  </div>)}
                   {page.warnings.map((w) => (
                     <p key={w} className="sf-hint">
                       {m[warningKey[w]]}
@@ -635,9 +919,9 @@ export function DocumentScanner(props: DocumentScannerProps) {
                   ))}
                 </>
               ) : null}
-            </div>
-          </div>
-          <footer className="sf-footer">
+            </div>)}
+          </div>)}
+          {slot("footer", <footer {...partProps("footer", "sf-footer")}>
             <label>
               {m.pageSize}
               <select
@@ -656,20 +940,20 @@ export function DocumentScanner(props: DocumentScannerProps) {
               </span>
               <button
                 type="button"
-                className="sf-primary"
+                className={classFor("primaryAction", "sf-primary")}
                 disabled={busy || !validLimit}
                 onClick={() => void prepare()}
               >
                 {m.prepare} <span aria-hidden="true">→</span>
               </button>
             </div>
-          </footer>
+          </footer>)}
         </>
       )}
-      <div className="sf-privacy">
+      {slot("privacy", <div {...partProps("privacy", "sf-privacy")}>
         <span aria-hidden="true">◈</span> {m.privacy}
         <small>{m.noRecovery}</small>
-      </div>
+      </div>)}
     </section>
   );
 }

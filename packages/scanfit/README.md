@@ -45,6 +45,40 @@ export function ApplicationDocuments() {
 
 Use `@scanfit/browser/trigger` for a small lazy-loaded dialog launcher or `useScanSession` for a headless React integration.
 
+## Styling and component API
+
+The ready-made scanner supports four levels of customization:
+
+1. Override the `--sf-*` CSS variables beneath a custom root `className`.
+2. Add classes through `classNames` and structural attributes through `slotProps`.
+3. Wrap or replace named sections through `slots`; each renderer receives state, messages, actions and the default content.
+4. Compose the exported `Camera`, `CornerEditor`, `ProcessedPreview` and `ExportReview` primitives, or own the whole interface through `useScanSession`.
+
+```tsx
+<DocumentScanner
+  className="portal-scanner"
+  classNames={{ header: "portal-header", primaryAction: "portal-action" }}
+  slotProps={{ root: { "aria-label": "Portal document scanner" } }}
+  slots={{
+    privacy: (context, defaultContent) => (
+      <aside data-state={context.status}>{defaultContent}</aside>
+    ),
+  }}
+  defaultPageSize="letter"
+  onPagesChange={(pages) => console.log(pages.length)}
+  maxBytes={2_000_000}
+  onComplete={({ file }) => attachToForm(file)}
+/>
+```
+
+Available section slots are `header`, `error`, `progress`, `camera`, `empty`, `toolbar`, `workspace`, `pageList`, `editor`, `pageActions`, `footer`, `privacy`, and `review`. Structural elements also expose stable `data-scanfit-part` attributes.
+
+`pageSize`, `selectedPageId`, and `editorView` can be controlled. Their `default*` props support uncontrolled use. Observe workflow changes with `onPageSizeChange`, `onSelectedPageIdChange`, `onEditorViewChange`, `onPagesChange`, `onStatusChange`, `onProgress`, and `onResultChange`.
+
+The lazy `ScannerTrigger` accepts `triggerProps`, `dialogProps`, `renderTrigger`, and `onOpenChange`. A custom trigger renderer is responsible for applying the supplied trigger ref if focus should return after the dialog closes.
+
+See the [complete customization guide](https://github.com/Ahmedsultan09/scanfit#customize-the-ready-made-scanner) for the slot context, theme guidance, and controlled-state example.
+
 ## Framework-independent TypeScript
 
 ```ts
@@ -99,7 +133,7 @@ Quality floors constrain automatic compression; they do not guarantee that text 
 - Natural color, grayscale and contrast filters.
 - A4, US Letter and image-proportional PDF pages.
 - Worker processing, cancellation, stale-job protection and cleanup.
-- Message dictionaries, RTL layout support and CSS variables.
+- Message dictionaries, RTL layout, complete visual-state tokens, named slots and headless APIs.
 - React components plus a framework-independent TypeScript core.
 
 ## Package entry points
@@ -122,6 +156,7 @@ Camera behavior, browser codec fallbacks, accessibility and performance still re
 ## Documentation and examples
 
 - [Complete usage and API guide](https://github.com/Ahmedsultan09/scanfit#readme)
+- [Examples for every public API entry point](https://github.com/Ahmedsultan09/scanfit/blob/main/docs/API.md)
 - [Detector design](https://github.com/Ahmedsultan09/scanfit/blob/main/docs/DETECTOR.md)
 - [Verification evidence](https://github.com/Ahmedsultan09/scanfit/blob/main/docs/VERIFICATION.md)
 - [Release checklist](https://github.com/Ahmedsultan09/scanfit/blob/main/docs/RELEASE_CHECKLIST.md)

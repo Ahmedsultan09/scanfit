@@ -187,15 +187,16 @@ function App() {
               of document uploads.
             </h2>
             <p>
-              React components, a headless TypeScript core, and a processing
-              worker. Bring your own backend—or none at all.
+              Themeable React components, named layout slots, composable UI
+              primitives, and a headless TypeScript core. Bring your own
+              backend—or none at all.
             </p>
             <ScannerTrigger maxBytes={maxBytes} onComplete={setCompleted}>
               Try the lazy-loaded dialog ↗
             </ScannerTrigger>
           </div>
           <pre>
-            <code>{`<DocumentScanner\n  maxBytes={2_000_000}\n  onComplete={({ file, report }) => {\n    // A real File, within your byte limit.\n    // Nothing is uploaded automatically.\n    attachToYourForm(file);\n  }}\n/>`}</code>
+            <code>{`<DocumentScanner\n  className="portal-scanner"\n  classNames={{ primaryAction: "portal-action" }}\n  maxBytes={2_000_000}\n  onComplete={({ file }) => {\n    // A real File, within your byte limit.\n    attachToYourForm(file);\n  }}\n/>`}</code>
           </pre>
         </section>
         <aside className="demo-note">

@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+} from "react";
 import {
   FULL_QUAD,
   copyQuad,
@@ -9,17 +14,22 @@ import {
 import { useObjectUrl } from "./hooks";
 import type { ScannerMessages } from "./messages";
 
+export interface CornerEditorProps
+  extends Omit<ComponentPropsWithoutRef<"div">, "children"> {
+  page: ScanPage;
+  onApply: (q: Quad) => void;
+  messages: ScannerMessages;
+  disabled?: boolean;
+}
+
 export function CornerEditor({
   page,
   onApply,
   messages: m,
-  disabled,
-}: {
-  page: ScanPage;
-  onApply: (q: Quad) => void;
-  messages: ScannerMessages;
-  disabled: boolean;
-}) {
+  disabled = false,
+  className = "",
+  ...containerProps
+}: CornerEditorProps) {
   const url = useObjectUrl(page.preview),
     [corners, setCorners] = useState(() => copyQuad(page.edits.corners)),
     [selected, setSelected] = useState(0);
@@ -55,7 +65,10 @@ export function CornerEditor({
   const magWidth = 600,
     magHeight = (magWidth * page.height) / page.width;
   return (
-    <div className="sf-crop">
+    <div
+      {...containerProps}
+      className={`sf-primitive sf-crop ${className}`.trim()}
+    >
       <div
         className="sf-image-wrap"
         ref={area}

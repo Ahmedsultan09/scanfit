@@ -4,6 +4,19 @@ Notable changes to ScanFit will be recorded here. The project follows [Semantic 
 
 ## Unreleased
 
+### Added
+
+- Named scanner section slots with state, messages, workflow actions and built-in fallback content.
+- Per-part classes, structural slot attributes, stable `data-scanfit-part` selectors, and expanded CSS theme tokens.
+- Controlled page-size, page-selection and editor-view props plus workflow change callbacks.
+- Public `Camera`, `CornerEditor`, `ProcessedPreview`, and `ExportReview` React primitives.
+- Lazy trigger button, dialog, renderer and open-state customization.
+- Complete examples for every public package entry point and customization layer.
+
+### Changed
+
+- The ready-made React API remains backward compatible with `renderHeader` and `renderPageSummary` while offering a more complete composition model.
+
 ## 0.1.0-alpha.2 - 2026-09-01
 
 ### Fixed

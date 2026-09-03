@@ -1,15 +1,28 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+} from "react";
 import type { ScannerMessages } from "./messages";
+
+export interface CameraProps
+  extends Omit<ComponentPropsWithoutRef<"section">, "children"> {
+  onCapture: (file: Blob) => void;
+  onClose: () => void;
+  messages: ScannerMessages;
+  primaryActionClassName?: string;
+}
 
 export function Camera({
   onCapture,
   onClose,
   messages: m,
-}: {
-  onCapture: (file: Blob) => void;
-  onClose: () => void;
-  messages: ScannerMessages;
-}) {
+  primaryActionClassName = "",
+  className = "",
+  "aria-label": ariaLabel,
+  ...sectionProps
+}: CameraProps) {
   const video = useRef<HTMLVideoElement>(null),
     stream = useRef<MediaStream | null>(null);
   const mounted = useRef(false);
@@ -93,7 +106,11 @@ export function Camera({
     }
   }
   return (
-    <section className="sf-camera" aria-label={m.cameraTitle}>
+    <section
+      {...sectionProps}
+      className={`sf-primitive sf-camera ${className}`.trim()}
+      aria-label={ariaLabel ?? m.cameraTitle}
+    >
       <div className="sf-section-heading">
         <h3>{m.cameraTitle}</h3>
         <button type="button" onClick={onClose}>
@@ -108,7 +125,7 @@ export function Camera({
           <p>{ready ? m.cameraHelp : m.cameraStarting}</p>
           <button
             type="button"
-            className="sf-primary"
+            className={`sf-primary ${primaryActionClassName}`.trim()}
             disabled={!ready || capturing}
             onClick={() => void capture()}
           >

@@ -2,7 +2,7 @@
 
 An MIT-licensed TypeScript library for **capture/import → correct pages → fit an upload limit → inspect → return a PDF File**. React components are optional; document processing happens locally in a worker.
 
-**Status: public alpha, not a release-certified beta.** `@scanfit/browser@0.1.0-alpha.1` is published on npm, the demo is deployed, and the cross-browser CI suite is green. Physical-device testing, broader document fixtures, and user pilots remain release gates.
+**Status: public alpha, not a release-certified beta.** `@scanfit/browser@0.1.0-alpha.2` is published on npm, the demo is deployed, and the cross-browser CI suite is green. Physical-device testing, broader document fixtures, and user pilots remain release gates.
 
 **Live demo:** [scanfit-two.vercel.app](https://scanfit-two.vercel.app)
 
@@ -70,7 +70,65 @@ import "@scanfit/browser/styles.css";
 
 The trigger imports the scanner when opened. CSS is an explicit import; its bytes are included in the initial trigger budget. React is a peer dependency and is not bundled. Imports do not open cameras or create workers during server rendering. Mount interactive components within your framework’s client boundary.
 
-`DocumentScanner` also accepts `onClose`, `onError`, `session`, `options`, `messages`, `dir`, `className`, `renderHeader`, and `renderPageSummary`. `ScannerTrigger` adds `children` and `loadingLabel`. Use `useScanSession(options)` for headless React integration. Changing session option values creates a fresh owned session; changing object identity alone does not.
+`DocumentScanner` also accepts `onClose`, `onError`, `session`, `options`, `messages`, `dir`, styling and slot props, controlled UI state, and change callbacks. `ScannerTrigger` adds lazy-dialog customization. Use `useScanSession(options)` for headless React integration. Changing session option values creates a fresh owned session; changing object identity alone does not.
+
+### Customize the ready-made scanner
+
+Use CSS variables for a small theme, `classNames` for individual parts, `slotProps` for structural attributes, and `slots` when a section needs different markup. Every structural part receives a stable `data-scanfit-part` attribute.
+
+```tsx
+<DocumentScanner
+  className="application-scanner"
+  style={{ "--sf-accent": "#4338ca" } as React.CSSProperties}
+  classNames={{
+    header: "application-scanner__header",
+    primaryAction: "application-scanner__primary",
+  }}
+  slotProps={{
+    root: { "aria-label": "Application document scanner" },
+    pageList: { "data-testid": "document-pages" },
+  }}
+  slots={{
+    toolbar: (context, defaultToolbar) => (
+      <div className="application-toolbar">
+        {defaultToolbar}
+        <span>{context.pages.length}/20 pages</span>
+      </div>
+    ),
+  }}
+  maxBytes={2_000_000}
+  onComplete={({ file }) => attachToForm(file)}
+/>
+```
+
+Available section slots are `header`, `error`, `progress`, `camera`, `empty`, `toolbar`, `workspace`, `pageList`, `editor`, `pageActions`, `footer`, `privacy`, and `review`. A slot receives the current session state, selected page, export state, messages, and actions plus the built-in content. Keep the default content, wrap it, or replace it.
+
+The complete theme surface is declared at the top of `@scanfit/browser/styles.css`. It includes accent, focus, success, warning, danger, canvas, backdrop, shadow, radius, and font tokens. Scope overrides beneath your own `className` to avoid changing other scanner instances.
+
+### Control UI state and observe changes
+
+`pageSize`, `selectedPageId`, and `editorView` are controlled props. Use their `default*` equivalents for uncontrolled initial values. The corresponding `on*Change` callback runs only when the scanner requests a change.
+
+```tsx
+<DocumentScanner
+  pageSize={pageSize}
+  onPageSizeChange={setPageSize}
+  selectedPageId={selectedPageId}
+  onSelectedPageIdChange={setSelectedPageId}
+  editorView={editorView}
+  onEditorViewChange={setEditorView}
+  onPagesChange={setPages}
+  onStatusChange={setScannerStatus}
+  onProgress={setProgress}
+  onResultChange={setExportResult}
+  maxBytes={2_000_000}
+  onComplete={handleComplete}
+/>
+```
+
+`Camera`, `CornerEditor`, `ProcessedPreview`, and `ExportReview` are exported from `@scanfit/browser/react` as composable primitives. They accept normal root-element attributes and classes. Use these when the workflow is familiar but its arrangement should be different. Use `useScanSession` or `createScanSession` when the entire interface and interaction model belong to the host application.
+
+The legacy `renderHeader` and `renderPageSummary` props remain supported. New integrations should prefer named slots when replacing larger sections.
 
 ## Framework-independent core
 
@@ -121,6 +179,8 @@ Runnable consumers live in [`examples/`](examples/README.md):
 - Vanilla TypeScript, Vue and Svelte demonstrate the framework-independent session core.
 
 `npm run test:examples` builds all five against the local package. External applications can install the published alpha with `npm install @scanfit/browser@next`.
+
+For examples of every public entry point—including slots, controlled state, primitives, the headless hook, core sessions, custom detectors, and the low-level PDF API—read the [complete public API examples](docs/API.md).
 
 ### Session operations
 
@@ -196,7 +256,7 @@ See [the independent detector design](docs/DETECTOR.md) for the algorithm bounda
 
 Crop by dragging, keyboard arrows (Shift for larger steps), or corner selection plus tap-operated nudge buttons. Changes apply immediately. Reordering has buttons. The dialog uses native modal focus behavior and restores focus to its trigger. Busy work and errors are announced; final review receives focus. Closing a populated scanner asks before discarding.
 
-Provide `messages` to replace user-facing UI labels and explanations, and `loadingLabel` for the lazy trigger. Core errors have stable `ScanError.code` values; localize error presentation through the host if needed. Set `dir="rtl"`, override `--sf-*` variables through a scoped CSS rule, or build a custom interface with the headless hook/core. The current keyboard tests are not a WCAG certification or a substitute for screen-reader trials.
+Provide `messages` to replace user-facing UI labels and explanations, and `loadingLabel` for the lazy trigger. Core errors have stable `ScanError.code` values; localize error presentation through the host if needed. Set `dir="rtl"`, override `--sf-*` variables through a scoped CSS rule, replace named sections with `slots`, compose the exported UI primitives, or build a custom interface with the headless hook/core. The current keyboard tests are not a WCAG certification or a substitute for screen-reader trials.
 
 ## Evidence and next steps
 
