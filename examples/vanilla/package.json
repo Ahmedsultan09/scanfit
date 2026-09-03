@@ -11,7 +11,7 @@
     "@scanfit/browser": "0.1.0-alpha.3"
   },
   "devDependencies": {
-    "typescript": "^5.9.0",
-    "vite": "^7.1.0"
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
   }
 }
